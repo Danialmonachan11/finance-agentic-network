@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/companies" class="muted">&larr; all companies</a></p>
+<h1>{{ company.name }}</h1>
+
+{% if approver %}
+<div class="auth-banner signed-in">
+  <span>Signed in as <strong>{{ approver.display_name }}</strong> ({{ approver.role }}) — you can approve requests below on behalf of {{ company.name }}</span>
+  <form method="post" action="/logout"><button type="submit" style="background:#0f5132; border-color:#0f5132;">Sign out</button></form>
+</div>
+{% else %}
+<div class="auth-banner signed-out">
+  <span>Not signed in — browsing is open to everyone, but approving requests for {{ company.name }} requires signing in</span>
+  <a role="button" href="/login?next=/companies/{{ company.id }}&company={{ company.id }}">Sign in</a>
+</div>
+{% endif %}
+
+{% if error %}
+<div class="alert-warning">⚠️ {{ error }}</div>
+{% endif %}
+
+{% if invoice_result %}
+<div class="result result-proposed">
+  ✅ Invoice <strong>{{ invoice_result.invoice_number }}</strong> generated via Scribo — €{{ "%.2f"|format(invoice_result.amount) }}
+  billed to <strong>{{ invoice_result.buyer_name }}</strong>, emailed to {{ invoice_result.sent_to }} with the PDF attached.
+  <a href="/invoices/{{ invoice_result.invoice_number }}">View it &rarr;</a>
+</div>
+{% endif %}
+
+{% if result %}
+<div class="result result-{{ result.outcome }}">
+  {% if result.outcome == 'proposed' %}
+  ✅ Request sent — a {{ "%.0f"|format(result.approved_rate * 100) }}% discount was proposed at the
+  <strong>{{ result.approval_level }}</strong> level.
+  {% elif result.outcome == 'auto_rejected' %}
+  🚫 Request sent — automatically declined (risk score {{ "%.2f"|format(result.risk_score) }} on a
+  0=safest to 1=riskiest scale, at or above the auto-reject threshold). No human review needed — a decline
+  notice was drafted back to the requester directly.
+  {% else %}
+  🚩 Request sent — couldn't be auto-processed: {{ result.terminal_reason }}. Sent for review.
+  {% endif %}
+  <div style="margin-top:0.6rem;">
+    {% for s in result.narrated_steps %}
+    <div class="step">{{ s.icon }} <strong>{{ s.title }}</strong> — {{ s.detail }}</div>
+    {% endfor %}
+  </div>
+  <a href="/workflow/{{ result.workflow_id }}" style="font-size:0.8rem;">See full technical trace &rarr;</a>
+</div>
+{% endif %}
+
+<div class="stat-cards">
+  <article><div class="num">{{ invoices_as_seller_count }}</div><div class="label">Invoices issued</div></article>
+  <article><div class="num">{{ invoices_as_buyer|length }}</div><div class="label">Invoices received</div></article>
+  <article><div class="num">{{ pending|length }}</div><div class="label">Awaiting review</div></article>
+  <article><div class="num">{{ executed|length }}</div><div class="label">Executed</div></article>
+</div>
+
+<h2>📄 Invoice tracker</h2>
+<p class="muted" style="font-size:0.85rem;">Every invoice touching {{ company.name }} — as the one who issued
+  it or the one who received it — with its current discount status, in one place.</p>
+<figure>
+<table>
+  <tr><th>Invoice</th><th>Role</th><th>Counterparty</th><th>Amount</th><th>Contract</th><th>Discount status</th><th>Delivery</th></tr>
+  {% for inv in invoices %}
+  <tr>
+    <td class="mono">{{ inv.invoice_number }}</td>
+    <td><span class="badge {{ 'badge-executed' if inv.role == 'issued' else 'badge-proposed' }}">{{ inv.role }}</span></td>
+    <td>{{ inv.counterparty }}</td>
+    <td>€{{ "%.2f"|format(inv.amount) }}</td>
+    <td><span class="badge {% if inv.contract_status == 'active' %}badge-executed{% else %}badge-rejected{% endif %}">{{ inv.contract_status or 'none' }}</span></td>
+    <td>
+      {% if inv.discount_status == 'executed' %}
+        <span class="badge badge-executed">executed — {{ "%.0f"|format(inv.approved_rate * 100) }}%</span>
+      {% elif inv.discount_status == 'proposed' %}
+        <span class="badge badge-proposed">awaiting approval — {{ "%.0f"|format(inv.claimed_rate * 100) }}% requested</span>
+      {% elif inv.discount_status == 'rejected' %}
+        <span class="badge badge-rejected">rejected</span>
+      {% else %}
+        <span class="muted">no discount requested</span>
+      {% endif %}
+      {% if inv.workflow_id %}<a href="/workflow/{{ inv.workflow_id }}" style="font-size:0.8rem; margin-left:0.4rem;">why?</a>{% endif %}
+    </td>
+    <td>
+      {% if inv.emailed_to %}
+        <span class="badge badge-executed" title="Sent via Gmail to {{ inv.emailed_to }}">📧 emailed</span>
+      {% else %}
+        <span class="muted">—</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="muted">No invoices yet.</td></tr>
+  {% endfor %}
+</table>
+</figure>
+
+<h2>🧾 Generate &amp; send an invoice — as {{ company.name }}, billing another company</h2>
+{% if scribo_seller_supported %}
+<p class="muted" style="font-size:0.85rem;">Real e-invoicing via Scribo, a real third-party invoicing API — a genuine,
+  validator-passed PDF is generated and emailed with the attachment. This demo network's companies don't have
+  real inboxes, so delivery always goes to {{ scribo_sender_email }} regardless of buyer — noted honestly, not hidden.</p>
+<form method="post" action="/companies/{{ company.id }}/invoice">
+  <label>Bill to
+    <select name="buyer_company_id" required>
+      {% for c in other_companies %}
+      <option value="{{ c.id }}">{{ c.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="grid">
+    <label>Description
+      <input type="text" name="description" required placeholder="e.g. Q3 logistics services">
+    </label>
+    <label>Quantity
+      <input type="text" name="quantity" required value="1">
+    </label>
+    <label>Unit price (€)
+      <input type="text" name="unit_price" required placeholder="1000.00">
+    </label>
+    <label>Tax rate (%)
+      <input type="text" name="tax_rate" required value="19">
+    </label>
+  </div>
+  <label>Due date
+    <input type="date" name="due_date" required>
+  </label>
+  <button type="submit">Generate invoice &amp; email it</button>
+</form>
+{% else %}
+<p class="muted" style="font-size:0.85rem;">Scribo's e-invoicing (Phase 1) only supports invoices issued from
+  Germany or the US — {{ company.name }}'s jurisdiction isn't covered yet, so this feature is unavailable here.
+  A real product limitation, not a bug: try Kessler Manufacturing or Nordwind Logistik GmbH (both DE) instead.</p>
+{% endif %}
+
+<h2>📥 To-do — requests needing {{ company.name }}'s review (as seller)</h2>
+<p class="muted" style="font-size:0.85rem;">Other companies have asked {{ company.name }} for a discount on
+  invoices it issued. Approving re-validates everything from scratch before executing.</p>
+<figure>
+<table>
+  <tr><th>Invoice</th><th>From</th><th>Requesting</th><th>Requires</th><th>Why this needs review</th><th>Approve</th></tr>
+  {% for p in pending %}
+  <tr>
+    <td class="mono">{{ p.invoice_number }}</td>
+    <td>{{ p.buyer_name }}</td>
+    <td>{{ "%.0f%%"|format(p.claimed_rate * 100) }}</td>
+    <td><span class="badge badge-proposed">{{ p.approval_level }}</span></td>
+    <td class="muted">
+      {% if p.grounding_reason %}{{ p.grounding_reason }}{% else %}(seed data — no live reasoning recorded){% endif %}
+      {% if p.risk_reason %}<br><span style="font-size:0.82rem;">🛡️ {{ p.risk_reason }}</span>{% endif %}
+      {% if p.workflow_id %}<br><a href="/workflow/{{ p.workflow_id }}" style="font-size:0.8rem;">full trace &rarr;</a>{% endif %}
+    </td>
+    <td>
+      {% if approver %}
+      <form class="inline" method="post" action="/proposals/{{ p.proposal_id }}/approve">
+        <input type="hidden" name="return_to" value="/companies/{{ company.id }}">
+        <button type="submit">Approve as {{ approver.display_name }}</button>
+      </form>
+      {% else %}
+      <a href="/login?next=/companies/{{ company.id }}&company={{ company.id }}">Sign in to approve</a>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="muted">Nothing pending.</td></tr>
+  {% endfor %}
+</table>
+</figure>
+
+<h2>🚫 Auto-declined (informational — no action needed)</h2>
+<p class="muted" style="font-size:0.85rem;">These never reached the to-do list above: the risk gate
+  declined them automatically because the claim was too far off from the supporting evidence.
+  No approve button here on purpose — a decline was already drafted and sent back to the requester.</p>
+<figure>
+<table>
+  <tr><th>Invoice</th><th>From</th><th>Requested</th><th>Risk score <span class="muted" style="font-weight:400; font-size:0.75em;">(0=safest, 1=riskiest)</span></th><th>Why declined</th></tr>
+  {% for p in auto_rejected %}
+  <tr>
+    <td class="mono">{{ p.invoice_number }}</td>
+    <td>{{ p.buyer_name }}</td>
+    <td>{{ "%.0f%%"|format(p.claimed_rate * 100) }}</td>
+    <td><span class="badge badge-rejected">{{ "%.2f"|format(p.risk_score) }}</span></td>
+    <td class="muted">{{ p.risk_reason or 'no reasoning recorded' }} <a href="/workflow/{{ p.workflow_id }}" style="font-size:0.8rem;">full trace &rarr;</a></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5" class="muted">None.</td></tr>
+  {% endfor %}
+</table>
+</figure>
+
+<h2>📤 Send a request — as buyer, on an invoice {{ company.name }} received</h2>
+<form method="post" action="/companies/{{ company.id }}/request">
+  <label>Invoice
+    <select name="invoice_id" id="invoice_id" required onchange="updatePlaceholder()">
+      {% for inv in invoices_as_buyer %}
+      <option value="{{ inv.invoice_id }}" data-number="{{ inv.invoice_number }}">{{ inv.invoice_number }} — from {{ inv.seller_name }} — €{{ "%.2f"|format(inv.amount) }}{% if inv.contract_status != 'active' %} (contract: {{ inv.contract_status }}){% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Message
+    <textarea name="message" id="message" required placeholder="Write your own request..."></textarea>
+  </label>
+  <button type="submit">Send</button>
+</form>
+
+<h2>✅ Recent executed</h2>
+<figure>
+<table>
+  <tr><th>Invoice</th><th>Seller</th><th>Buyer</th><th>Rate</th><th>By</th><th>When</th></tr>
+  {% for p in executed %}
+  <tr>
+    <td class="mono">{{ p.invoice_number }}</td>
+    <td>{{ p.seller_name }}</td>
+    <td>{{ p.buyer_name }}</td>
+    <td>{{ "%.0f%%"|format(p.approved_rate * 100) }}</td>
+    <td>{{ p.approved_by }}</td>
+    <td class="muted mono">{{ p.decided_at.strftime('%Y-%m-%d %H:%M') }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="muted">Nothing executed yet.</td></tr>
+  {% endfor %}
+</table>
+</figure>
+
+<script>
+  function updatePlaceholder() {
+    const sel = document.getElementById('invoice_id');
+    if (!sel.options.length) return;
+    const number = sel.options[sel.selectedIndex].dataset.number;
+    document.getElementById('message').placeholder =
+      `e.g. "Following up on ${number} — could we get 10% off given the order volume?"`;
+  }
+  updatePlaceholder();
+</script>
+{% endblock %}

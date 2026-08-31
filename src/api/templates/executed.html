@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Executed discounts — network-wide</h1>
+<article>
+<table>
+  <tr><th>Invoice</th><th>Seller</th><th>Buyer</th><th>Claimed</th><th>Approved</th><th>Level</th><th>Approved by</th><th>When</th><th>Source</th></tr>
+  {% for p in proposals %}
+  <tr>
+    <td class="mono">{{ p.invoice_number }}</td>
+    <td>{{ p.seller_name }}</td>
+    <td>{{ p.buyer_name }}</td>
+    <td class="muted">{{ "%.0f%%"|format(p.claimed_rate * 100) }}</td>
+    <td>{{ "%.0f%%"|format(p.approved_rate * 100) }}</td>
+    <td><span class="badge badge-executed">{{ p.approval_level }}</span></td>
+    <td>{{ p.approved_by }}</td>
+    <td class="muted mono">{{ p.decided_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+    <td>{% if p.workflow_id %}<a href="/workflow/{{ p.workflow_id }}">live — view trace</a>{% else %}<span class="muted">seed data</span>{% endif %}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="9" class="muted">Nothing executed yet.</td></tr>
+  {% endfor %}
+</table>
+</article>
+{% endblock %}

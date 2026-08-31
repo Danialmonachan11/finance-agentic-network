@@ -1,0 +1,207 @@
+/**
+ * Types and formatting helpers for the Finance Agentic Network frontend.
+ * Field names mirror the real FastAPI /api/* payloads — see
+ * Finance_Agent_Central/src/lib/api.ts for the live fetch functions that
+ * now back every route (DESIGN-IS-2026-08-26/09-frontend-integration-plan.md,
+ * Phase 4).
+ *
+ * Two fields are deliberately absent from these types because they don't
+ * exist server-side ("Known gaps from Phase 1" in that doc):
+ * InvoiceRow.discount_status/emailed, and ExecutedRow.path (every
+ * real executed row is a human decision, so the UI just says "human").
+ * InvoiceRow.has_pdf DOES exist server-side (list_all_invoices, main.py) —
+ * it's real, not a mock.
+ * Company uses the real `id` (UUID), not a slug — the backend has no slug
+ * concept.
+ */
+
+export type ApprovalLevel = "auto" | "manager" | "cfo";
+export type ContractStatus = "active" | "expired" | "none";
+
+export interface Company {
+  id: string;
+  name: string;
+  invoices_as_seller: number;
+  invoices_as_buyer: number;
+  pending_as_seller: number;
+  receivable: number;
+  payable: number;
+}
+
+export interface PendingRequest {
+  proposal_id: string; // real identity for approve/decline — workflow_id is null for non-pipeline proposals
+  workflow_id: string | null;
+  invoice_number: string;
+  seller_name: string;
+  buyer_name: string;
+  claimed_rate: number;
+  approval_level: ApprovalLevel;
+  amount: number;
+  due_date: string;
+  contract_status: ContractStatus | null; // LEFT JOIN contract — null when the invoice has no contract row at all
+  risk_score: number | null; // nullable column (schema.sql) — not every proposal has been risk-scored
+  grounding_reason: string | null; // null for seeded proposals — no workflow_id means the agent pipeline never ran
+  risk_reason: string | null;
+  requested_at: string;
+}
+
+export interface InvoiceRow {
+  invoice_id: string; // present on list_all_invoices() rows, needed to submit a discount request
+  invoice_number: string;
+  seller_name: string;
+  buyer_name: string;
+  amount: number;
+  contract_status: ContractStatus | null; // LEFT JOIN contract — null when the invoice has no contract row at all
+  has_pdf: boolean; // real generated invoices have a PDF on disk; seeded rows don't
+}
+
+export interface ExecutedRow {
+  invoice_number: string;
+  seller_name: string;
+  buyer_name: string;
+  claimed_rate: number;
+  approved_rate: number;
+  approval_level: ApprovalLevel;
+  approved_by: string;
+  decided_at: string;
+}
+
+export interface AuditRow {
+  workflow_id: string;
+  step: string;
+  agent: string;
+  status: string;
+  reason: string;
+  timestamp: string;
+}
+
+/** Backend status strings are never shown raw — translate every one here. */
+const STATUS_PHRASES: Record<string, string> = {
+  ok: "Step completed",
+  pending: "Awaiting review",
+  approved: "Approved",
+  declined: "Declined",
+  none: "No request",
+  auto_approved: "Approved automatically",
+  auto_executed: "Executed automatically",
+  auto_declined: "Declined automatically",
+  auto_rejected: "Declined automatically",
+  human_decided: "Decided by a person",
+  escalated_no_match: "Sent to a human — no contract match",
+  escalated_cfo: "Sent to a human — CFO sign-off needed",
+  no_contract: "No contract on file",
+  active: "Contract active",
+  expired: "Contract expired",
+};
+
+export function humanStatus(status: string): string {
+  return STATUS_PHRASES[status] ?? status.replace(/_/g, " ");
+}
+
+export function statusTone(status: string): "pending" | "success" | "danger" | "neutral" {
+  if (["approved", "auto_approved", "auto_executed", "ok", "active"].includes(status)) return "success";
+  if (["declined", "auto_rejected", "auto_declined", "expired"].includes(status)) return "danger";
+  if (["pending", "escalated_no_match", "escalated_cfo", "no_contract"].includes(status))
+    return "pending";
+  return "neutral";
+}
+
+export function money(value: number): string {
+  return value.toLocaleString("en-US", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+  });
+}
+
+export function pct(rate: number): string {
+  return `${(rate * 100).toFixed(rate * 100 % 1 === 0 ? 0 : 1)}%`;
+}
+
+export function shortDate(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function dateTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function companyIdByName(companies: Company[], name: string): string | undefined {
+  return companies.find((c) => c.name === name)?.id;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Documents — only rows that really have a generated PDF appear here.       */
+/* ------------------------------------------------------------------------ */
+
+export interface InvoiceDocument {
+  invoice_number: string;
+  filename: string;
+  generated_at: string;
+  pages: number;
+  size_kb: number;
+  /** Line items as they appear on the generated document. */
+  lines: { description: string; qty: number; unit_price: number }[];
+  issued_by: string;
+  issued_to: string;
+  due_date: string;
+  notes: string;
+}
+
+export const invoiceDocuments: InvoiceDocument[] = [
+  {
+    invoice_number: "INV-2001",
+    filename: "INV-2001_nordwind_aurea.pdf",
+    generated_at: "2026-08-05T10:22:00Z",
+    pages: 1,
+    size_kb: 34.8,
+    issued_by: "Nordwind Logistik GmbH",
+    issued_to: "Aurea Retail S.A.",
+    due_date: "2026-09-04",
+    lines: [
+      { description: "Groupage freight, Hamburg → Barcelona, week 31", qty: 12, unit_price: 84.0 },
+      { description: "Customs handling", qty: 4, unit_price: 63.0 },
+      { description: "Pallet exchange fee", qty: 30, unit_price: 8.0 },
+    ],
+    notes: "Payment within 30 days. Volume tier B applies from 2026-08-17.",
+  },
+  {
+    invoice_number: "INV-2019",
+    filename: "INV-2019_nordwind_vitro.pdf",
+    generated_at: "2026-08-12T07:41:00Z",
+    pages: 2,
+    size_kb: 51.2,
+    issued_by: "Nordwind Logistik GmbH",
+    issued_to: "Vitro Packaging BV",
+    due_date: "2026-09-11",
+    lines: [
+      { description: "Temperature-controlled transport, Rotterdam → Lyon", qty: 5, unit_price: 310.1 },
+      { description: "Night surcharge", qty: 5, unit_price: 42.0 },
+      { description: "Return empties", qty: 12, unit_price: 40.0 },
+    ],
+    notes: "5% early-settlement discount if paid within 10 days, per clause 3.1.",
+  },
+];
+
+export function documentFor(invoiceNumber: string): InvoiceDocument | undefined {
+  return invoiceDocuments.find((d) => d.invoice_number === invoiceNumber);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Automation & cost, and per-model usage now come from GET /api/automation  */
+/* — see Finance_Agent_Central/src/lib/api.ts's getAutomation() and          */
+/* AutomationResponse. The hardcoded automation/models/evals fixtures that   */
+/* used to live here are gone (DESIGN-IS-2026-08-26/10-agents-page-plan.md,  */
+/* Phase 2): p50/p95 latency, agreement_rate, and the evals suite have no    */
+/* backing data anywhere in this codebase and were dropped rather than       */
+/* faked.                                                                    */
+/* ------------------------------------------------------------------------ */

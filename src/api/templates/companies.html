@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Finance Agentic Network</h1>
+<p class="muted">A network of companies invoicing each other — not a fixed "us vs customers" setup. Every company
+  below is a seller on some invoices and a buyer on others. Pick one to see its perspective: requests it can
+  make (as a buyer) and requests it needs to review (as a seller).</p>
+
+{% for c in companies %}
+<article style="margin-bottom:0.9rem;">
+  <a class="company-card" href="/companies/{{ c.id }}">
+    <h2>{{ c.name }}</h2>
+    <div class="company-stats">
+      <div><span class="num">{{ c.invoices_as_seller }}</span> issued</div>
+      <div><span class="num">{{ c.invoices_as_buyer }}</span> received</div>
+      <div>receivable <span class="num">€{{ "%.2f"|format(c.receivable) }}</span></div>
+      <div>payable <span class="num">€{{ "%.2f"|format(c.payable) }}</span></div>
+      {% if c.pending_as_seller > 0 %}<div class="pending-badge">{{ c.pending_as_seller }} awaiting review</div>{% endif %}
+    </div>
+  </a>
+</article>
+{% endfor %}
+
+<p><a href="/ops" class="muted">Raw audit log — every workflow across the network &rarr;</a></p>
+{% endblock %}

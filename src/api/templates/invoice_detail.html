@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>📄 {{ invoice_number }}</h1>
+<p><a href="/invoices/{{ invoice_number }}/pdf" target="_blank">Open the real PDF</a> — Invopop-validator-passed,
+  ZUGFeRD-compliant, generated via Scribo, a real third-party invoicing API (see docs/BRAIN.md decisions log).</p>
+
+<iframe src="/invoices/{{ invoice_number }}/pdf" style="width:100%; height:420px; border:1px solid var(--pico-muted-border-color); border-radius:var(--pico-border-radius);"></iframe>
+
+<article style="margin-top:1.5rem;">
+  <form method="post" action="/invoices/{{ invoice_number }}/extract">
+    <button type="submit">Run AI extraction now (real vision-model call)</button>
+  </form>
+
+  {% if extraction %}
+  <table style="margin-top:1rem;">
+    <tr><th>Field</th><th>AI extracted</th></tr>
+    <tr><td>Invoice number (on document)</td><td class="mono">{{ extraction.invoice_number }}</td></tr>
+    <tr><td>Total amount</td><td>{{ extraction.currency }} {{ "%.2f"|format(extraction.total_amount) }}</td></tr>
+    <tr><td>Seller</td><td>{{ extraction.seller_name }}</td></tr>
+    <tr><td>Buyer</td><td>{{ extraction.buyer_name }}</td></tr>
+    <tr><td>Due date</td><td>{{ extraction.due_date }}</td></tr>
+  </table>
+  <p class="muted">Note: the document's own invoice number (a Scribo-assigned ID) won't match our internal
+    invoice number ({{ invoice_number }}) — that's a real reconciliation gap, not a display bug. See BRAIN.md.</p>
+  {% endif %}
+</article>
+
+<p style="margin-top:1.5rem;"><a href="/invoices">&larr; back to invoices</a></p>
+{% endblock %}

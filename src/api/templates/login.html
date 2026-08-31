@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<article style="max-width:360px; margin:2rem auto;">
+  <h1 style="font-size:1.2rem;">{% if company_name %}Sign in — {{ company_name }}{% else %}Sign in to approve requests{% endif %}</h1>
+  {% if company_name %}<p class="muted">You're signing in to review and approve requests for <strong>{{ company_name }}</strong>.</p>{% endif %}
+  <form method="post" action="/login">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>Username
+      <input type="text" name="username" required autofocus>
+    </label>
+    <label>Password
+      <input type="password" name="password" required>
+    </label>
+    <button type="submit">Sign in</button>
+    {% if error %}<p style="color:var(--token-badge-red-ink);">{{ error }}</p>{% endif %}
+  </form>
+  <p class="muted" style="font-size:0.85rem;">Demo accounts: <code>alice</code> / <code>manager-demo-pw</code> (manager),
+    <code>bob</code> / <code>cfo-demo-pw</code> (cfo).</p>
+</article>
+{% endblock %}

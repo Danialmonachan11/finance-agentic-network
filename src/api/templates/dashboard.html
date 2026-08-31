@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Raw audit log — every workflow across the network</h1>
+<p class="muted">Every row here is a real Postgres audit_log entry. For the human-facing experience, see
+<a href="/companies">Companies</a>.</p>
+<p class="muted">💰 Network-wide LLM spend: {{ network_cost.workflows }} workflows, {{ network_cost.calls }} calls,
+  ${{ "%.6f"|format(network_cost.total_cost_usd) }} — real OpenRouter-reported cost per call, aggregated.</p>
+<form class="inline" method="post" action="/intake/poll">
+  <button type="submit">Poll Gmail now</button>
+  <span class="muted">Checks for unread discount-request emails and runs them through the full pipeline.</span>
+</form>
+{% if poll_result is defined %}
+  <p class="muted">Poll result: {{ poll_result }}</p>
+{% endif %}
+
+<article>
+<table>
+  <tr><th>Workflow</th><th>Latest step</th><th>Agent</th><th>Status</th><th>Reason</th><th>When</th></tr>
+  {% for w in workflows %}
+  <tr>
+    <td><a class="mono" href="/workflow/{{ w.workflow_id }}">{{ w.workflow_id|string|truncate(8, True, '') }}</a></td>
+    <td>{{ w.step }}</td>
+    <td>{{ w.agent }}</td>
+    <td><span class="badge badge-{{ w.decision }}">{{ w.decision }}</span></td>
+    <td class="muted">{{ w.reason|truncate(60) }}</td>
+    <td class="muted mono">{{ w.occurred_at.strftime('%H:%M:%S') }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="muted">No workflows yet. Run a demo module or click "Poll Gmail now".</td></tr>
+  {% endfor %}
+</table>
+</article>
+{% endblock %}

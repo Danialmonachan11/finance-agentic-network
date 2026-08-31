@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>📄 Invoices</h1>
+<p class="muted">Only INV-1002 has a real generated PDF on disk (via Scribo, a real third-party invoicing API) — the
+others are seeded database rows only. Shown honestly rather than faking documents for the rest.</p>
+<article>
+<table>
+  <tr><th>Invoice</th><th>Seller</th><th>Buyer</th><th>Amount</th><th>Contract</th><th>Document</th></tr>
+  {% for inv in invoices %}
+  <tr>
+    <td class="mono">{{ inv.invoice_number }}</td>
+    <td>{{ inv.seller_name }}</td>
+    <td>{{ inv.buyer_name }}</td>
+    <td>€{{ "%.2f"|format(inv.amount) }}</td>
+    <td><span class="badge {% if inv.contract_status == 'active' %}badge-executed{% else %}badge-rejected{% endif %}">{{ inv.contract_status }}</span></td>
+    <td>
+      {% if inv.invoice_number in has_pdf %}
+      <a href="/invoices/{{ inv.invoice_number }}">view PDF + run AI extraction</a>
+      {% else %}
+      <span class="muted">no document on file</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+</article>
+{% endblock %}

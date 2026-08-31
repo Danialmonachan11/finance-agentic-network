@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>🏦 Network-wide pending requests</h1>
+<p class="muted">Every request across the whole network awaiting review, regardless of which company. For a
+single company's own inbox, go to <a href="/companies">Companies</a> and click into one.</p>
+
+{% if error %}
+<div class="alert-warning">⚠️ {{ error }}</div>
+{% endif %}
+
+{% if not proposals %}
+<article><p class="muted">Nothing pending.</p></article>
+{% else %}
+<div class="proposals-layout">
+  <article class="proposals-list">
+    {% for p in proposals %}
+    <a class="proposal-row{% if selected_proposal and p.proposal_id == selected_proposal.proposal_id %} selected{% endif %}"
+       href="/proposals?selected={{ p.proposal_id }}">
+      <span class="mono">{{ p.invoice_number }}</span>
+      <span class="muted">{{ p.seller_name }} &larr; {{ p.buyer_name }}</span>
+      <span class="badge badge-proposed">{{ "%.0f%%"|format(p.claimed_rate * 100) }}</span>
+    </a>
+    {% endfor %}
+  </article>
+
+  <article class="proposal-detail">
+    {% if selected_proposal %}
+    {% set p = selected_proposal %}
+    <h2 class="mono">{{ p.invoice_number }} <span class="badge badge-proposed">{{ p.approval_level }}</span></h2>
+    <p><strong>Seller (reviews this):</strong> {{ p.seller_name }}<br>
+       <strong>Buyer (requested):</strong> {{ p.buyer_name }}<br>
+       <strong>Requested rate:</strong> {{ "%.0f%%"|format(p.claimed_rate * 100) }}<br>
+       <strong>Invoice amount:</strong> €{{ "%.2f"|format(p.amount) }}<br>
+       <strong>Due date:</strong> {{ p.due_date }}<br>
+       <strong>Contract status:</strong> {{ p.contract_status or "—" }}<br>
+       {% if p.risk_score is not none %}<strong>Risk score:</strong> {{ p.risk_score }} <span class="muted" style="font-size:0.85em;">(0=safest, 1=riskiest)</span><br>{% endif %}
+    </p>
+
+    <h3>Why this needs review</h3>
+    <p>{% if p.grounding_reason %}{{ p.grounding_reason }}{% else %}(seed data — no live reasoning recorded){% endif %}</p>
+    {% if p.risk_reason %}<p>🛡️ {{ p.risk_reason }}</p>{% endif %}
+    {% if p.workflow_id %}<p><a href="/workflow/{{ p.workflow_id }}">full trace &rarr;</a></p>{% endif %}
+
+    {% if approver %}
+    <div class="proposal-actions">
+      <form method="post" action="/proposals/{{ p.proposal_id }}/approve">
+        <input type="hidden" name="return_to" value="/proposals">
+        <button type="submit">Approve as {{ approver.display_name }}</button>
+      </form>
+      <form method="post" action="/proposals/{{ p.proposal_id }}/decline">
+        <input type="hidden" name="return_to" value="/proposals">
+        <button type="submit" class="secondary outline">Decline</button>
+      </form>
+    </div>
+    {% else %}
+    <p><a href="/login?next=/proposals">Sign in to approve</a></p>
+    {% endif %}
+    {% endif %}
+  </article>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+credentials/
+*.stackdump
+*.log
+.claude/logs/
+.claude/worktrees/
+.claude/settings.local.json
+data/seed/invoices/INV-GEN-*.pdf
+
+# Personal / private, not project code
+Danial_Monachan_Causa_Prima.pdf
+Finance Agent Central.zip
+docs/interview_prep.md
+docs/interview_prep_qa.md
+
+# Abandoned design exploration that fetched and embedded a specific
+# company's real website palette/typeface as research material -- kept
+# locally, not published (see BRAIN.md's design-pass notes for context)
+DESIGN-IS-2026-08-26/
+src/api/templates/prototype/

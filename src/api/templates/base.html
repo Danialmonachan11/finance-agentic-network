@@ -1,0 +1,37 @@
+<!doctype html>
+<html data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Finance Agentic Network{% endblock %}</title>
+  <link rel="stylesheet" href="/static/pico.min.css">
+  <link rel="stylesheet" href="/static/custom.css">
+</head>
+<body>
+  <header class="container">
+    <nav>
+      <ul>
+        <li><strong><a href="/companies">Finance Agentic Network</a></strong></li>
+      </ul>
+      <ul>
+        <li><a href="/companies">Companies</a></li>
+        <li><a href="/invoices">Invoices</a></li>
+        <li><a href="/proposals">Pending{% if pending_count() %} <span class="badge badge-proposed">{{ pending_count() }}</span>{% endif %}</a></li>
+        <li><a href="/executed">Executed (network-wide)</a></li>
+        <li><a href="/ops">Raw audit log</a></li>
+        <li>
+          {% if approver is defined and approver %}
+            <span class="muted">Signed in as {{ approver.display_name }} ({{ approver.role }})</span>
+            <form class="inline" method="post" action="/logout" style="display:inline;"><button type="submit" class="secondary outline" style="padding:0.2rem 0.6rem; font-size:0.8rem;">Sign out</button></form>
+          {% else %}
+            <a href="/companies" title="Sign in from a company's page">Sign in</a>
+          {% endif %}
+        </li>
+      </ul>
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

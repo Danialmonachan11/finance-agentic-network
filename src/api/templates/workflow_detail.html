@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Workflow <span class="mono">{{ workflow_id }}</span></h1>
+<p class="muted">Every step below is a real audit_log row — one per agent action, immutable, written as the workflow ran.
+  💰 {{ cost.calls }} LLM call{{ 's' if cost.calls != 1 }}, {{ cost.input_tokens + cost.output_tokens }} tokens,
+  ${{ "%.6f"|format(cost.estimated_cost_usd) }} — real OpenRouter-reported cost, not a modeled estimate.</p>
+
+<article>
+  {% for step in trace %}
+  <div class="step">
+    <div class="step-label">{{ step.step }} <span class="muted">— {{ step.agent }}{% if step.model %} ({{ step.model }}){% endif %}</span></div>
+    <div>{{ step.decision }}</div>
+    <div class="muted">{{ step.reason }}</div>
+    {% if step.tool_calls %}<div class="muted mono">{{ step.tool_calls }}</div>{% endif %}
+    <div class="muted mono">{{ step.occurred_at.strftime('%H:%M:%S') }}</div>
+  </div>
+  {% endfor %}
+</article>
+
+<p><a href="/">&larr; back to dashboard</a></p>
+{% endblock %}

@@ -1,0 +1,211 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Finance Agentic Network — design system.
+ * Dark near-black chrome, warm cream page, near-black ink, one rust accent.
+ * Status triad (pending / success / danger) is preserved verbatim.
+ * All values in oklch except the preserved status triad + brand tokens.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 3px);
+  --radius-md: calc(var(--radius) - 1px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-ink: var(--status-pending-ink);
+  --color-status-success: var(--status-success);
+  --color-status-success-ink: var(--status-success-ink);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-ink: var(--status-danger-ink);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono:
+    ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Type scale */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.625rem;
+  --text-xl: 1.3125rem;
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 2.125rem;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 2.5rem;
+
+  /* Spacing scale anchor (4px base) */
+  --spacing: 0.25rem;
+
+  --shadow-card: 0 1px 2px oklch(0.2 0.02 70 / 6%), 0 1px 0 oklch(0.2 0.02 70 / 4%);
+  --shadow-raised: 0 4px 16px -6px oklch(0.2 0.02 70 / 18%);
+}
+
+:root {
+  --radius: 0.375rem;
+
+  /* Brand tokens (live values) */
+  --token-bg-sidebar: #16171c;
+  --token-bg-page: #faf8f0;
+  --token-bg-card: #ffffff;
+  --token-ink: #1c1b18;
+  --token-ink-soft: #6b6858;
+  --token-accent: #d9743c;
+  --token-accent-hover: #b45a28;
+
+  --background: oklch(0.977 0.014 96.5);
+  --foreground: oklch(0.216 0.006 67.5);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.216 0.006 67.5);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.216 0.006 67.5);
+
+  --primary: oklch(0.647 0.132 45.6);
+  --primary-foreground: oklch(0.995 0.004 96);
+  --primary-hover: oklch(0.545 0.135 43);
+
+  --secondary: oklch(0.955 0.011 96);
+  --secondary-foreground: oklch(0.216 0.006 67.5);
+  --muted: oklch(0.951 0.012 95);
+  --muted-foreground: oklch(0.552 0.022 88);
+  --accent: oklch(0.941 0.02 78);
+  --accent-foreground: oklch(0.33 0.06 48);
+
+  --destructive: oklch(0.44 0.14 25.5);
+  --destructive-foreground: oklch(0.99 0.004 96);
+
+  --border: oklch(0.906 0.013 92);
+  --border-strong: oklch(0.83 0.017 90);
+  --input: oklch(0.888 0.014 92);
+  --ring: oklch(0.647 0.132 45.6);
+
+  --sidebar: oklch(0.196 0.008 279);
+  --sidebar-foreground: oklch(0.94 0.004 96);
+  --sidebar-muted: oklch(0.66 0.008 90);
+  --sidebar-accent: oklch(0.26 0.01 279);
+  --sidebar-border: oklch(0.3 0.008 279);
+
+  /* Preserved accessible status triad */
+  --status-pending: #fff3cd;
+  --status-pending-ink: #7a5b00;
+  --status-success: #d1e7dd;
+  --status-success-ink: #0f5132;
+  --status-danger: #f8d7da;
+  --status-danger-ink: #842029;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-accent-foreground);
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.012em;
+  }
+}
+
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@utility surface {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+@utility skeleton-bar {
+  background: linear-gradient(
+    90deg,
+    var(--color-muted) 0%,
+    var(--color-secondary) 50%,
+    var(--color-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: fan-shimmer 1.4s ease-in-out infinite;
+  border-radius: 3px;
+}
+
+@keyframes fan-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

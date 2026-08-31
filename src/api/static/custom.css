@@ -1,0 +1,238 @@
+/* Domain-specific styling on top of Pico.css (src/api/static/pico.min.css).
+   Pico handles typography, spacing, forms, tables, buttons, dark mode —
+   this file only covers things Pico doesn't know about: status badges,
+   the workflow step timeline, and the company-page auth banner. */
+
+/* Palette values approximated from screenshots of the reference Lovable
+   build (see DESIGN-IS-2026-08-26/07-lovable-integration.md) — no exact
+   source file exists. */
+:root {
+  --pico-font-size: 100%;
+
+  /* Color tokens */
+  --token-bg-sidebar: #16171c;
+  --token-bg-page: #FAF8F0;
+  --token-bg-card: #FFFFFF;
+  --token-ink: #1C1B18;
+  --token-ink-soft: #6B6858;
+  --token-accent: #D9743C;
+  --token-accent-hover: #B45A28;
+
+  /* Preserved WCAG-passing badge triad (unchanged values, now named) */
+  --token-badge-amber-bg: #fff3cd;
+  --token-badge-amber-ink: #7a5b00;
+  --token-badge-green-bg: #d1e7dd;
+  --token-badge-green-ink: #0f5132;
+  --token-badge-red-bg: #f8d7da;
+  --token-badge-red-ink: #842029;
+
+  /* Type scale (5-6 steps) */
+  --token-text-xs: 0.75rem;
+  --token-text-sm: 0.85rem;
+  --token-text-base: 1rem;
+  --token-text-md: 1.25rem;
+  --token-text-lg: 1.5rem;
+  --token-text-xl: 2rem;
+
+  /* Spacing scale (4px-based) */
+  --token-space-1: 0.25rem;
+  --token-space-2: 0.5rem;
+  --token-space-3: 0.75rem;
+  --token-space-4: 1rem;
+  --token-space-5: 1.5rem;
+  --token-space-6: 2rem;
+
+  --token-mono-font: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+
+  /* Remap Pico's own design tokens so every native component (body,
+     article/card, buttons, links) picks up the new palette for free. */
+  --pico-background-color: var(--token-bg-page);
+  --pico-color: var(--token-ink);
+  --pico-muted-color: var(--token-ink-soft);
+  --pico-card-background-color: var(--token-bg-card);
+  --pico-card-sectioning-background-color: var(--token-bg-card);
+  --pico-primary: var(--token-accent);
+  --pico-primary-background: var(--token-accent);
+  --pico-primary-hover-background: var(--token-accent-hover);
+  --pico-primary-inverse: #fff;
+}
+
+body {
+  background: var(--token-bg-page);
+  color: var(--token-ink);
+}
+
+header.container {
+  background: var(--token-bg-sidebar);
+  color: var(--token-bg-page);
+  font-family: var(--token-mono-font);
+  padding: var(--token-space-4);
+}
+header.container a {
+  color: inherit;
+}
+
+/* Shared panel primitive — Pico's bare <article> card, given the
+   project's border/shadow language. Every company_detail.html section
+   gets wrapped in one of these in Phase 3. */
+article {
+  background: var(--token-bg-card);
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  box-shadow: 0 1px 3px rgba(28, 27, 24, 0.08);
+  padding: var(--token-space-5);
+}
+
+/* Subordinate, collapsible panel — same border/shadow language as
+   article, but quieter (no shadow, smaller padding) since it holds
+   secondary content per the redesign plan. summary is the visible,
+   native disclosure affordance that it expands (Pico's default marker
+   kept, just made to read as clearly clickable). */
+details {
+  background: var(--token-bg-card);
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  padding: var(--token-space-3) var(--token-space-4);
+  margin-bottom: var(--token-space-4);
+}
+details > summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+details[open] > summary {
+  margin-bottom: var(--token-space-3);
+  border-bottom: 1px solid var(--pico-muted-border-color);
+  padding-bottom: var(--token-space-2);
+}
+
+.mono {
+  font-family: var(--token-mono-font);
+  font-size: var(--token-text-sm);
+}
+
+.muted {
+  color: var(--pico-muted-color);
+}
+
+/* Status badges — used across companies/proposals/executed/dashboard for
+   discount-proposal status and workflow decisions. Falls back to a
+   neutral pill for decision values that don't map to one of the four
+   known statuses (e.g. raw audit_log steps on the technical /ops view). */
+.badge {
+  display: inline-block;
+  padding: var(--token-space-1) var(--token-space-2);
+  border-radius: 999px;
+  font-size: var(--token-text-xs);
+  font-weight: 600;
+  font-family: var(--token-mono-font);
+  background: var(--pico-secondary-background);
+  color: var(--pico-secondary-inverse);
+  white-space: nowrap;
+}
+.badge-proposed { background: var(--token-badge-amber-bg); color: var(--token-badge-amber-ink); }
+.badge-executed { background: var(--token-badge-green-bg); color: var(--token-badge-green-ink); }
+.badge-rejected, .badge-escalated_no_match { background: var(--token-badge-red-bg); color: var(--token-badge-red-ink); }
+
+/* [aria-busy="true"] is Pico's native loading-spinner mechanism (CSS-only,
+   no JS) — intentionally not wired into any form/button yet (deferred to
+   a later phase); this file just avoids overriding Pico's own styling
+   for it so it works unmodified whenever a template opts in. */
+
+/* Workflow trace timeline (workflow_detail.html) */
+.step {
+  padding: var(--token-space-2) 0;
+  border-left: 2px solid var(--pico-muted-border-color);
+  padding-left: var(--token-space-4);
+  margin-left: var(--token-space-2);
+}
+.step-label { font-weight: 600; }
+
+/* Narrated result banner after submitting a discount request */
+.result {
+  border-radius: var(--pico-border-radius);
+  padding: var(--token-space-4) var(--token-space-5);
+  margin-bottom: var(--token-space-5);
+}
+.result-proposed { background: var(--token-badge-green-bg); color: var(--token-badge-green-ink); }
+.result-escalated_no_match { background: var(--token-badge-amber-bg); color: var(--token-badge-amber-ink); }
+.result-auto_rejected { background: var(--token-badge-red-bg); color: var(--token-badge-red-ink); }
+
+.alert-warning {
+  background: var(--token-badge-amber-bg);
+  color: var(--token-badge-amber-ink);
+  padding: var(--token-space-3) var(--token-space-4);
+  border-radius: var(--pico-border-radius);
+  margin-bottom: var(--token-space-4);
+}
+
+/* Company-page sign-in status banner */
+.auth-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--token-space-4);
+  border-radius: var(--pico-border-radius);
+  padding: var(--token-space-3) var(--token-space-4);
+  margin-bottom: var(--token-space-5);
+  font-size: var(--token-text-sm);
+}
+.auth-banner.signed-in { background: var(--token-badge-green-bg); color: var(--token-badge-green-ink); }
+.auth-banner.signed-out {
+  background: var(--pico-card-sectioning-background-color);
+  border: 1px solid var(--pico-muted-border-color);
+}
+.auth-banner form, .auth-banner a.button { margin: 0; }
+.auth-banner button { padding: var(--token-space-2) var(--token-space-4); font-size: var(--token-text-sm); width: auto; }
+/* The sign-out button (company_detail.html) sets an inline
+   background:#0f5132, which replaces Pico's default-styled button
+   appearance entirely — Pico's own :focus-visible ring is tuned for its
+   default palette and may not read clearly against a custom background,
+   so give it an explicit one. */
+.auth-banner button:focus-visible {
+  outline: 3px solid var(--token-accent);
+  outline-offset: 2px;
+}
+
+/* Companies picker — one clickable card per company */
+.company-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--token-space-4);
+  text-decoration: none;
+  color: var(--pico-color);
+}
+.company-card h2 { margin: 0; font-size: var(--token-text-base); }
+.company-stats { display: flex; gap: var(--token-space-5); font-size: var(--token-text-sm); align-items: center; }
+.company-stats .num { font-weight: 700; color: var(--pico-color); font-family: var(--token-mono-font); }
+.pending-badge { background: var(--token-badge-amber-bg); color: var(--token-badge-amber-ink); padding: var(--token-space-1) var(--token-space-2); border-radius: 999px; font-size: var(--token-text-xs); font-weight: 600; font-family: var(--token-mono-font); }
+
+/* Summary cards on the company page */
+.stat-cards { display: flex; gap: var(--token-space-4); margin-bottom: var(--token-space-4); }
+.stat-cards article { flex: 1; margin: 0; padding: var(--token-space-4); }
+.stat-cards .num { font-size: var(--token-text-lg); font-weight: 700; color: var(--token-accent); font-family: var(--token-mono-font); }
+.stat-cards .label { font-size: var(--token-text-xs); color: var(--pico-muted-color); text-transform: uppercase; letter-spacing: 0.03em; font-family: var(--token-mono-font); }
+
+form.inline { display: flex; gap: var(--token-space-2); align-items: center; flex-wrap: wrap; }
+form.inline button { width: auto; margin: 0; }
+
+/* Master-detail layout for /proposals — list on the left, full detail on
+   the right. Both sides are the existing article panel primitive. */
+.proposals-layout { display: flex; gap: var(--token-space-4); align-items: flex-start; }
+.proposals-list { flex: 0 0 320px; padding: var(--token-space-2); display: flex; flex-direction: column; gap: var(--token-space-1); }
+.proposal-detail { flex: 1; min-width: 0; }
+.proposal-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--token-space-1);
+  padding: var(--token-space-3);
+  border-radius: var(--pico-border-radius);
+  text-decoration: none;
+  color: var(--pico-color);
+  border: 1px solid transparent;
+}
+.proposal-row:hover { background: var(--token-bg-page); }
+.proposal-row.selected { border-color: var(--token-accent); background: var(--token-bg-page); }
+.proposal-actions { display: flex; gap: var(--token-space-2); }
+.proposal-actions form { margin: 0; }
+.proposal-actions button { width: auto; }
