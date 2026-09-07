@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Status inquiry: one email answered without a human",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1050,
+      580
+    ],
+    "views": [
+      {
+        "id": "intake",
+        "label": "Intake and identity",
+        "focus": [
+          "seller",
+          "mailbox",
+          "gateway",
+          "registry"
+        ],
+        "note": "The sender is checked against the registry before anything is trusted. No key means email-only mode."
+      },
+      {
+        "id": "ground",
+        "label": "Ground against the ERP",
+        "focus": [
+          "agent",
+          "erp",
+          "llm"
+        ],
+        "note": "The answer comes from the system of record. The model only phrases it."
+      },
+      {
+        "id": "reply",
+        "label": "Reply path",
+        "focus": [
+          "agent",
+          "mailbox",
+          "seller"
+        ],
+        "note": "Draft by default. Sends only if this counterparty and message type are enabled."
+      }
+    ],
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "seller",
+      "type": "external",
+      "label": "Seller AR",
+      "sublabel": "counterparty"
+    },
+    {
+      "id": "mailbox",
+      "type": "external",
+      "label": "Mailbox",
+      "sublabel": "Gmail / Outlook"
+    },
+    {
+      "id": "gateway",
+      "type": "security",
+      "label": "Gateway",
+      "sublabel": "classify, resolve"
+    },
+    {
+      "id": "registry",
+      "type": "security",
+      "label": "Registry",
+      "sublabel": "identity"
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "Agent",
+      "sublabel": "LangGraph"
+    },
+    {
+      "id": "erp",
+      "type": "database",
+      "label": "ERP",
+      "sublabel": "system of record"
+    },
+    {
+      "id": "llm",
+      "type": "cloud",
+      "label": "LLM",
+      "sublabel": "cheap tier"
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 278,
+      "label": "Intake"
+    },
+    {
+      "from": 286,
+      "to": 432,
+      "label": "Ground"
+    },
+    {
+      "from": 440,
+      "to": 496,
+      "label": "Reply"
+    }
+  ],
+  "messages": [
+    {
+      "from": "seller",
+      "to": "mailbox",
+      "y": 176,
+      "label": "\"where is payment for INV-2041?\"",
+      "variant": "emphasis"
+    },
+    {
+      "from": "mailbox",
+      "to": "gateway",
+      "y": 205,
+      "label": "poll, dedupe by message id",
+      "variant": "emphasis"
+    },
+    {
+      "from": "gateway",
+      "to": "registry",
+      "y": 234,
+      "label": "sender known? signed?",
+      "variant": "security"
+    },
+    {
+      "from": "registry",
+      "to": "gateway",
+      "y": 263,
+      "label": "no key: email-only mode",
+      "variant": "return"
+    },
+    {
+      "from": "gateway",
+      "to": "agent",
+      "y": 300,
+      "label": "typed case: status_inquiry",
+      "variant": "emphasis"
+    },
+    {
+      "from": "agent",
+      "to": "erp",
+      "y": 329,
+      "label": "match vendor + amount + ref",
+      "variant": "default"
+    },
+    {
+      "from": "erp",
+      "to": "agent",
+      "y": 358,
+      "label": "INV-2041: approved, pay run 18 Sep",
+      "variant": "return"
+    },
+    {
+      "from": "agent",
+      "to": "llm",
+      "y": 387,
+      "label": "phrase reply (redacted facts)",
+      "variant": "default"
+    },
+    {
+      "from": "llm",
+      "to": "agent",
+      "y": 416,
+      "label": "draft text",
+      "variant": "return"
+    },
+    {
+      "from": "agent",
+      "to": "mailbox",
+      "y": 452,
+      "label": "create draft (send if enabled)",
+      "variant": "dashed",
+      "note": "audit row + cost row written first"
+    },
+    {
+      "from": "mailbox",
+      "to": "seller",
+      "y": 481,
+      "label": "reply with real status",
+      "variant": "dashed"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "gateway",
+      "from": 200,
+      "to": 306,
+      "type": "security"
+    },
+    {
+      "participant": "registry",
+      "from": 229,
+      "to": 268,
+      "type": "security"
+    },
+    {
+      "participant": "agent",
+      "from": 295,
+      "to": 457,
+      "type": "backend"
+    },
+    {
+      "participant": "erp",
+      "from": 324,
+      "to": 363,
+      "type": "database"
+    },
+    {
+      "participant": "llm",
+      "from": 382,
+      "to": 421,
+      "type": "cloud"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Zero human touches",
+      "items": [
+        "Invoice on file, nobody interrupted; today this is ~2h of AP time a day"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust before content",
+      "items": [
+        "Registry lookup precedes classification; unknown sender means draft only"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "The model states no facts",
+      "items": [
+        "Status and date come from the ERP row; the LLM only phrases them"
+      ]
+    }
+  ]
+}

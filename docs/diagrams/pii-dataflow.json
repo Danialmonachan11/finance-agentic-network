@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Where message text goes: PII boundary",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1070,
+      520
+    ],
+    "views": [
+      {
+        "id": "to-model",
+        "label": "What leaves the company",
+        "focus": [
+          "email",
+          "gateway",
+          "redactor",
+          "llm"
+        ],
+        "note": "Only redacted text reaches the third-party model. Raw text never does."
+      },
+      {
+        "id": "in-house",
+        "label": "What stays in house",
+        "focus": [
+          "gateway",
+          "rawstore",
+          "policy",
+          "approver"
+        ],
+        "note": "Raw text is kept for audit and shown to the approver inside the company."
+      },
+      {
+        "id": "records",
+        "label": "What is recorded",
+        "focus": [
+          "llm",
+          "audit"
+        ],
+        "note": "Tokens, cost, and the decision are logged. The prompt body is not."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Source"
+    },
+    {
+      "label": "Intake"
+    },
+    {
+      "label": "Split"
+    },
+    {
+      "label": "Process"
+    },
+    {
+      "label": "Consume"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "email",
+      "type": "external",
+      "label": "Inbound email",
+      "sublabel": "names, phones, IBANs",
+      "stage": 0,
+      "row": 1,
+      "tag": "untrusted"
+    },
+    {
+      "id": "gateway",
+      "type": "security",
+      "label": "Intake gateway",
+      "sublabel": "classify, resolve",
+      "stage": 1,
+      "row": 1,
+      "tag": "boundary"
+    },
+    {
+      "id": "redactor",
+      "type": "security",
+      "label": "PII redactor",
+      "sublabel": "masks emails, phones",
+      "stage": 2,
+      "row": 0,
+      "tag": "regex today"
+    },
+    {
+      "id": "rawstore",
+      "type": "database",
+      "label": "Raw text store",
+      "sublabel": "Postgres, internal",
+      "stage": 2,
+      "row": 2,
+      "tag": "audit"
+    },
+    {
+      "id": "llm",
+      "type": "cloud",
+      "label": "LLM provider",
+      "sublabel": "third party",
+      "stage": 3,
+      "row": 0,
+      "tag": "external"
+    },
+    {
+      "id": "policy",
+      "type": "security",
+      "label": "Policy engine",
+      "sublabel": "numbers, not names",
+      "stage": 3,
+      "row": 2,
+      "tag": "no LLM"
+    },
+    {
+      "id": "audit",
+      "type": "database",
+      "label": "Audit + cost",
+      "sublabel": "tokens, cost, decision",
+      "stage": 4,
+      "row": 0,
+      "tag": "no prompt body"
+    },
+    {
+      "id": "approver",
+      "type": "frontend",
+      "label": "Approver console",
+      "sublabel": "in-house only",
+      "stage": 4,
+      "row": 2,
+      "tag": "sees raw claim"
+    }
+  ],
+  "flows": [
+    {
+      "id": "raw-in",
+      "from": "email",
+      "to": "gateway",
+      "label": "raw message",
+      "classification": "contains PII",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "to-redactor",
+      "from": "gateway",
+      "to": "redactor",
+      "label": "text for the model",
+      "classification": "PII touch",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "to-raw",
+      "from": "gateway",
+      "to": "rawstore",
+      "label": "raw text + message id",
+      "classification": "internal",
+      "variant": "default",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "redacted-out",
+      "from": "redactor",
+      "to": "llm",
+      "label": "redacted text",
+      "classification": "no direct identifiers",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        638,
+        200
+      ]
+    },
+    {
+      "id": "rows-to-policy",
+      "from": "rawstore",
+      "to": "policy",
+      "label": "invoice, contract rows",
+      "classification": "structured",
+      "variant": "default",
+      "route": "straight",
+      "labelAt": [
+        638,
+        428
+      ]
+    },
+    {
+      "id": "usage",
+      "from": "llm",
+      "to": "audit",
+      "label": "tokens, cost, extraction",
+      "classification": "metadata",
+      "variant": "default",
+      "route": "straight",
+      "labelAt": [
+        853,
+        200
+      ]
+    },
+    {
+      "id": "decision",
+      "from": "policy",
+      "to": "approver",
+      "label": "decision + reason",
+      "classification": "derived",
+      "variant": "emphasis",
+      "route": "straight"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "One exit from the company",
+      "items": [
+        "The redactor is the only path to the model; today regex for emails, phones, IBANs"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The decision needs no PII",
+      "items": [
+        "Policy engine reads rows, not prose; approvers see the raw claim in-house"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Records without bodies",
+      "items": [
+        "Audit keeps decision, tokens, cost; the prompt text is not duplicated"
+      ]
+    }
+  ]
+}

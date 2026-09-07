@@ -6,8 +6,9 @@ the design method in `docs/reference/ai-system-design-interviews-live-session.pd
 Every requirement below names the pain or the lever that licenses it. If a
 requirement has no source, delete it.
 
-Architecture diagram: `docs/diagrams/architecture.html` (interactive, source in
-`architecture.json`, static copy `architecture.png`).
+Diagrams (interactive HTML, JSON source, PNG capture) in `docs/diagrams/`:
+`architecture` (components), `status-inquiry` (sequence for P1),
+`claim-lifecycle` (states for P2), `pii-dataflow` (R18 boundary).
 
 ## 1. Problem
 

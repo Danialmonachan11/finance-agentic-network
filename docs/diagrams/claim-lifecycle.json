@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Discount claim lifecycle: from email to executed, declined, or human",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1050,
+      590
+    ],
+    "views": [
+      {
+        "id": "happy",
+        "label": "Within policy",
+        "focus": [
+          "received",
+          "extracted",
+          "grounded",
+          "scored",
+          "executed"
+        ],
+        "note": "A claim that matches the contract and scores low risk executes with no human."
+      },
+      {
+        "id": "gate",
+        "label": "The human gate",
+        "focus": [
+          "scored",
+          "awaiting",
+          "executed",
+          "expired"
+        ],
+        "note": "The contested middle waits for an approver of the seller company at the required role rank."
+      },
+      {
+        "id": "exits",
+        "label": "Declines and expiry",
+        "focus": [
+          "grounded",
+          "needs_human",
+          "declined",
+          "expired"
+        ],
+        "note": "Outside policy or unresolvable goes to a human queue; silence past the SLA expires the claim."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Claim phases"
+    },
+    {
+      "id": "waiting",
+      "label": "Human gate"
+    },
+    {
+      "id": "terminal",
+      "label": "Terminal exits"
+    }
+  ],
+  "states": [
+    {
+      "id": "received",
+      "type": "start",
+      "label": "Received",
+      "sublabel": "email or signed message",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "intake"
+    },
+    {
+      "id": "extracted",
+      "type": "active",
+      "label": "Extracted",
+      "sublabel": "LLM reads the claim",
+      "lane": "main",
+      "col": 1,
+      "step": "02",
+      "tag": "read only"
+    },
+    {
+      "id": "grounded",
+      "type": "decision",
+      "label": "Grounded",
+      "sublabel": "checked vs contract",
+      "lane": "main",
+      "col": 2,
+      "step": "03",
+      "tag": "no LLM"
+    },
+    {
+      "id": "scored",
+      "type": "decision",
+      "label": "Risk scored",
+      "sublabel": "claim gap + network",
+      "lane": "main",
+      "col": 3,
+      "step": "04",
+      "tag": "heuristic"
+    },
+    {
+      "id": "executed",
+      "type": "success",
+      "label": "Executed",
+      "sublabel": "revalidated, idempotent",
+      "lane": "main",
+      "col": 4,
+      "step": "05",
+      "tag": "done"
+    },
+    {
+      "id": "needs_human",
+      "type": "waiting",
+      "label": "Needs human",
+      "sublabel": "unresolvable or non-claim",
+      "lane": "waiting",
+      "col": 0,
+      "tag": "queue"
+    },
+    {
+      "id": "awaiting",
+      "type": "waiting",
+      "label": "Awaiting approval",
+      "sublabel": "contested middle",
+      "lane": "waiting",
+      "col": 1,
+      "tag": "role-ranked"
+    },
+    {
+      "id": "declined",
+      "type": "failure",
+      "label": "Declined",
+      "sublabel": "with reason, reply sent",
+      "lane": "terminal",
+      "col": 0,
+      "tag": "terminal",
+      "yOffset": -48
+    },
+    {
+      "id": "expired",
+      "type": "failure",
+      "label": "Expired",
+      "sublabel": "approval timed out",
+      "lane": "terminal",
+      "col": 1,
+      "tag": "terminal",
+      "yOffset": -48
+    }
+  ],
+  "transitions": [
+    {
+      "id": "to-needs-human",
+      "from": "grounded",
+      "to": "needs_human",
+      "label": "no invoice match",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight",
+      "labelAt": [
+        402,
+        202
+      ]
+    },
+    {
+      "id": "to-awaiting",
+      "from": "scored",
+      "to": "awaiting",
+      "label": "middle band",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight",
+      "labelAt": [
+        556,
+        202
+      ]
+    },
+    {
+      "id": "approved",
+      "from": "awaiting",
+      "to": "executed",
+      "label": "approved",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "human-declines",
+      "from": "needs_human",
+      "to": "declined",
+      "label": "declined by human",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight",
+      "labelAt": [
+        402,
+        350
+      ]
+    },
+    {
+      "id": "awaiting-expired",
+      "from": "awaiting",
+      "to": "expired",
+      "label": "no decision in SLA",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight",
+      "labelAt": [
+        556,
+        350
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Three outcomes from one score",
+      "items": [
+        "Low risk executes, high risk declines, the middle waits for an approver"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Waiting is not terminal",
+      "items": [
+        "Silence past the SLA expires the claim; a refused execution re-queues, never drops"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Execution trusts nothing upstream",
+      "items": [
+        "Eligibility re-derived for the exact proposal id; re-execution is a no-op"
+      ]
+    }
+  ]
+}
