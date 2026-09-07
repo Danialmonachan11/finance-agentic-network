@@ -1,6 +1,6 @@
 /**
  * Fetch client for the FastAPI backend's JSON API (/api/*).
- * See DESIGN-IS-2026-08-26/09-frontend-integration-plan.md, Phase 1-4.
+ * See docs/design/lovable/09-frontend-integration-plan.md, Phase 1-4.
  */
 import type { AuditRow, Company, ExecutedRow, InvoiceRow, PendingRequest } from "./fan-data";
 

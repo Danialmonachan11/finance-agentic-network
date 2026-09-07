@@ -88,7 +88,7 @@ CREATE TABLE audit_log (
     occurred_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Event log (docs/architecture.md §3.2 event-driven handoffs): durable
+-- Event log (docs/reference/architecture.md §3.2 event-driven handoffs): durable
 -- record of every workflow-level event, paired with a live Postgres NOTIFY
 -- on the same channel for real-time consumers (src/orchestration/events.py).
 -- NOTIFY alone is ephemeral (only delivered to connections listening at
@@ -105,7 +105,7 @@ CREATE TABLE workflow_event (
 
 CREATE INDEX idx_workflow_event_type ON workflow_event(event_type);
 
--- AI FinOps (docs/architecture.md §3.11): cost per LLM call. Closed after
+-- AI FinOps (docs/reference/architecture.md §3.11): cost per LLM call. Closed after
 -- comparing this build against a reference architecture that named "Cost
 -- Tracker" as its own component — see src/guardrails/cost_tracker.py.
 CREATE TABLE llm_call_cost (
@@ -132,7 +132,7 @@ CREATE TABLE approver (
     role            TEXT NOT NULL CHECK (role IN ('manager', 'cfo'))
 );
 
--- Intake idempotency (docs/architecture.md §3.2): tracks which Gmail
+-- Intake idempotency (docs/reference/architecture.md §3.2): tracks which Gmail
 -- messages have already been turned into a workflow run, so a re-poll
 -- doesn't reprocess one and create a duplicate proposal/draft. Deliberately
 -- NOT implemented via Gmail's own UNREAD label + gmail.modify scope — that

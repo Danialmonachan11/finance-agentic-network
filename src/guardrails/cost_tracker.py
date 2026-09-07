@@ -1,4 +1,4 @@
-"""AI FinOps (docs/architecture.md §3.11): cost per LLM call, aggregated per
+"""AI FinOps (docs/reference/architecture.md §3.11): cost per LLM call, aggregated per
 workflow. Designed in the architecture doc, never implemented until now —
 closed after comparing this build against a reference banking-agent
 architecture diagram that named a "Cost Tracker" as its own component.

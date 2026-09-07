@@ -1,4 +1,4 @@
-"""Per-agent model selection through OpenRouter (docs/architecture.md §3.11:
+"""Per-agent model selection through OpenRouter (docs/reference/architecture.md §3.11:
 cheap model for classification/routing, stronger model only where reasoning
 is genuinely needed). One API key, multiple providers/models — this is what
 lets different agents in the graph use different models without managing

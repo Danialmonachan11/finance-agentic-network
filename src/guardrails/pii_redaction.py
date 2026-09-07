@@ -1,5 +1,5 @@
 """PII redaction before untrusted free text reaches a third-party LLM
-(docs/architecture.md §3.10; closed 2026-08-25 after comparing against a
+(docs/reference/architecture.md §3.10; closed 2026-08-25 after comparing against a
 reference banking-agent architecture that put "PII Redaction" between the
 API layer and the agents, specifically gating what a third-party LLM ever
 sees). The raw, unredacted email_text is still what gets stored in

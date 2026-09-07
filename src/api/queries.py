@@ -431,7 +431,7 @@ def list_decisions_in_window(days: int = 30, limit: int = 50) -> list[dict]:
 def model_usage_summary(days: int = 30) -> list[dict]:
     """Per-model call/token/cost totals from llm_call_cost for the window —
     no latency or agreement_rate columns, they don't exist on this table
-    (see DESIGN-IS-2026-08-26/10-agents-page-plan.md Phase 0)."""
+    (see docs/design/lovable/10-agents-page-plan.md Phase 0)."""
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(
             """

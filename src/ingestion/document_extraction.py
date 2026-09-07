@@ -1,4 +1,4 @@
-"""Document Extraction agent (docs/architecture.md §3.1): turn an invoice
+"""Document Extraction agent (docs/reference/architecture.md §3.1): turn an invoice
 PDF into structured fields via a vision-capable model. This is a READ, same
 grounding discipline as extract_claim in the orchestration graph — the
 extracted fields get compared against Postgres, never trusted standalone.

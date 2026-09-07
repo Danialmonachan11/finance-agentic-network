@@ -1,4 +1,4 @@
-"""Prompt-injection resistance tests (docs/architecture.md §3.10 — treat
+"""Prompt-injection resistance tests (docs/reference/architecture.md §3.10 — treat
 every email/attachment as untrusted input). These run real adversarial
 email bodies through the full orchestration graph (real LLM calls via
 OpenRouter, real Postgres grounding) and assert the deterministic layer

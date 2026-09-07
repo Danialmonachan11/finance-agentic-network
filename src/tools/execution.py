@@ -1,4 +1,4 @@
-"""Execution-tier tool (docs/architecture.md §3.9 tool categories). This is
+"""Execution-tier tool (docs/reference/architecture.md §3.9 tool categories). This is
 the ONLY function in the codebase that moves a discount_proposal to
 'executed' — every other code path (the orchestration graph, gmail_intake)
 stops at 'proposed'. Calling this always re-validates from scratch via

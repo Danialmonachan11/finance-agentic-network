@@ -1,5 +1,5 @@
 """Specialist agent nodes for the invoice-discount workflow
-(docs/architecture.md §3.1). Each node is deliberately narrow: one job, a
+(docs/reference/architecture.md §3.1). Each node is deliberately narrow: one job, a
 scoped slice of state in, a scoped slice of state out, one audit log entry.
 
 Grounding discipline (§3.4) is enforced structurally here: extract_claim
@@ -284,7 +284,7 @@ def propose(state: WorkflowState) -> dict:
 
 
 def auto_execute(state: WorkflowState) -> dict:
-    """Tier 3 autonomous execution (docs/architecture.md §3.4's original
+    """Tier 3 autonomous execution (docs/reference/architecture.md §3.4's original
     intent, never wired up until now — see discount_logic.DiscountPolicy's
     auto_approve_rate docstring). Gated by route_after_risk_score on risk
     alone (2026-08-27 decision) — any grounded-eligible claim (active

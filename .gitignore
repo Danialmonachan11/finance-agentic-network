@@ -9,15 +9,10 @@ credentials/
 .claude/worktrees/
 .claude/settings.local.json
 data/seed/invoices/INV-GEN-*.pdf
+frontend/.env.local
 
-# Personal / private, not project code
-Danial_Monachan_Causa_Prima.pdf
-Finance Agent Central.zip
-docs/interview_prep.md
-docs/interview_prep_qa.md
+# Lovable design export (binary snapshot, kept locally only)
+docs/design/lovable/lovable-export-2026-08-26.zip
 
-# Abandoned design exploration that fetched and embedded a specific
-# company's real website palette/typeface as research material -- kept
-# locally, not published (see BRAIN.md's design-pass notes for context)
-DESIGN-IS-2026-08-26/
-src/api/templates/prototype/
+# Third-party material, local reference only
+docs/reference/ai-system-design-interviews-live-session.pdf

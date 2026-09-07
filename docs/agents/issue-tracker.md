@@ -1,6 +1,6 @@
 # Issue tracker: local markdown
 
-This repo has no git remote (solo, local-only project). Issues live as
+This repo has a GitHub remote but no issue tracker in use (solo project). Issues live as
 markdown files under `.scratch/<feature>/`, not in an external tracker.
 
 ## Convention

@@ -3,7 +3,7 @@ event-driven rather than just 'the orchestration graph happens to write to
 a table.' Subscribes to workflow.escalated and reacts (here: logs what a
 real alert to a human ops channel would contain). It has zero knowledge of
 LangGraph, the discount domain, or which node published the event — only
-the event contract (docs/architecture.md §3.2's "event contracts" line from
+the event contract (docs/reference/architecture.md §3.2's "event contracts" line from
 agent-boundary design). A Slack/PagerDuty integration would slot in here
 without touching src/orchestration/graph.py at all.
 """

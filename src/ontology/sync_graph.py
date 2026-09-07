@@ -1,7 +1,7 @@
 """Mirror the Company/Contract/DiscountPolicy NETWORK from Postgres (the
 transactional source of truth) into Neo4j (the traversal/explanation
 layer). One-way sync, Postgres -> Neo4j, run after seeding or after any
-contract change. See docs/architecture.md §3.3 for why this is a derived
+contract change. See docs/reference/architecture.md §3.3 for why this is a derived
 view, not a second source of truth.
 
 Rewritten 2026-08-24 from a single-customer hub-and-spoke model to an

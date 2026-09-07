@@ -1,4 +1,4 @@
-"""Deterministic policy gate (docs/architecture.md §3.5/§3.6): the harness
+"""Deterministic policy gate (docs/reference/architecture.md §3.5/§3.6): the harness
 layer that sits between a proposal and execution. Nothing here trusts state
 that another component already computed — every check re-derives from
 Postgres, because a proposal record could be stale (contract changed since

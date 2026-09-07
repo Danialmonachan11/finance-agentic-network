@@ -1,4 +1,4 @@
-"""Read-tier tools (docs/architecture.md §3.9 tool categories): resolve a
+"""Read-tier tools (docs/reference/architecture.md §3.9 tool categories): resolve a
 claim against the system of record. These are the *only* place an agent's
 "our contract gives us X%" claim gets checked against real data — see §3.4.
 No LLM involvement in this file; it's plain SQL.

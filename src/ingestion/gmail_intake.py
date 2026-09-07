@@ -1,4 +1,4 @@
-"""Gmail intake (docs/architecture.md §3.8 email-first architecture).
+"""Gmail intake (docs/reference/architecture.md §3.8 email-first architecture).
 
 Gmail READ is real: gmail_oauth.py wires the actual Gmail API (OAuth2,
 read + compose scopes only — no send) — see BRAIN.md's decisions log

@@ -236,16 +236,8 @@ def _company_page_context(request: Request, company_id: str, result: dict | None
 
 
 @app.get("/companies/{company_id}")
-def company_detail(request: Request, company_id: str, variant: str = "current"):
-    # PROTOTYPE (DESIGN-IS-2026-08-26): ?variant=a/b/c switches to throwaway
-    # redesign templates for visual comparison. See prototype/README.md.
-    # Remove this branch once a variant wins and is folded into the real template.
-    template_name = {
-        "a": "prototype/company_detail_variant_a.html",
-        "b": "prototype/company_detail_variant_b.html",
-        "c": "prototype/company_detail_variant_c.html",
-    }.get(variant, "company_detail.html")
-    return templates.TemplateResponse(request, template_name, _company_page_context(request, company_id))
+def company_detail(request: Request, company_id: str):
+    return templates.TemplateResponse(request, "company_detail.html", _company_page_context(request, company_id))
 
 
 @app.post("/companies/{company_id}/request")
@@ -449,7 +441,7 @@ def invoice_extract(request: Request, invoice_number: str):
 
 # --- JSON API (Phase 1, read-only) ---------------------------------------
 # Each route wraps the same query function/context its HTML counterpart
-# already calls, zero new business logic. See DESIGN-IS-2026-08-26/09-*.md.
+# already calls, zero new business logic. See docs/design/lovable/09-*.md.
 
 @app.get("/api/companies")
 def api_companies():
@@ -469,7 +461,7 @@ def api_company_detail(request: Request, company_id: str):
 @app.get("/api/proposals")
 def api_proposals():
     # created_at -> requested_at: the only key renamed here, to match the
-    # frontend's PendingRequest type (Finance_Agent_Central/src/lib/fan-data.ts).
+    # frontend's PendingRequest type (frontend/src/lib/fan-data.ts).
     # The underlying query/column name is untouched.
     rows = []
     for p in list_pending_proposals():
@@ -492,7 +484,7 @@ def api_executed():
 @app.get("/api/audit")
 def api_audit():
     # decision -> status, occurred_at -> timestamp: renamed here to match the
-    # frontend's AuditRow type (Finance_Agent_Central/src/lib/fan-data.ts).
+    # frontend's AuditRow type (frontend/src/lib/fan-data.ts).
     # The underlying audit_log column names are untouched.
     workflows = []
     for w in list_recent_workflows():

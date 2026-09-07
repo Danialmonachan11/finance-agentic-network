@@ -57,7 +57,7 @@ against transactional truth, not just schema-checking a shape).
 DiscountPolicy, never asserted by an email, a claim, or an agent. Who is
 authorized to approve a DiscountProposal at a given level is a separate
 concept (see Approver role).
-_Avoid_: Tier (used for autonomy tiers in docs/architecture.md — a
+_Avoid_: Tier (used for autonomy tiers in docs/reference/architecture.md — a
 related but distinct concept; don't conflate the two).
 
 **Approver role**:

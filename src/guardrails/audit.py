@@ -1,4 +1,4 @@
-"""Immutable audit log writer (docs/architecture.md §3.5). Every agent step
+"""Immutable audit log writer (docs/reference/architecture.md §3.5). Every agent step
 in the orchestration graph calls this — one row per step, append-only,
 never updated or deleted. This is the harness-enforced side of "every
 decision is auditable," not something an agent can opt out of.

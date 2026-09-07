@@ -1,8 +1,8 @@
 /**
  * Types and formatting helpers for the Finance Agentic Network frontend.
  * Field names mirror the real FastAPI /api/* payloads — see
- * Finance_Agent_Central/src/lib/api.ts for the live fetch functions that
- * now back every route (DESIGN-IS-2026-08-26/09-frontend-integration-plan.md,
+ * frontend/src/lib/api.ts for the live fetch functions that
+ * now back every route (docs/design/lovable/09-frontend-integration-plan.md,
  * Phase 4).
  *
  * Two fields are deliberately absent from these types because they don't
@@ -198,9 +198,9 @@ export function documentFor(invoiceNumber: string): InvoiceDocument | undefined 
 
 /* ------------------------------------------------------------------------ */
 /* Automation & cost, and per-model usage now come from GET /api/automation  */
-/* — see Finance_Agent_Central/src/lib/api.ts's getAutomation() and          */
+/* — see frontend/src/lib/api.ts's getAutomation() and          */
 /* AutomationResponse. The hardcoded automation/models/evals fixtures that   */
-/* used to live here are gone (DESIGN-IS-2026-08-26/10-agents-page-plan.md,  */
+/* used to live here are gone (docs/design/lovable/10-agents-page-plan.md,  */
 /* Phase 2): p50/p95 latency, agreement_rate, and the evals suite have no    */
 /* backing data anywhere in this codebase and were dropped rather than       */
 /* faked.                                                                    */

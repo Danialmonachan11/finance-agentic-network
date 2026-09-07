@@ -1,4 +1,4 @@
-"""Event-driven agent handoffs (docs/architecture.md §3.2), via Postgres's
+"""Event-driven agent handoffs (docs/reference/architecture.md §3.2), via Postgres's
 native LISTEN/NOTIFY — not Kafka/RabbitMQ. Deliberate choice: at this
 throughput (one event per workflow transition, not per token or per tool
 call), a message broker is infrastructure the JD's own domain doesn't

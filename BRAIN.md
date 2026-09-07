@@ -19,7 +19,7 @@ Goal is **one real, running, end-to-end workflow** — not broad coverage.
 Full 13-section architecture (multi-agent design, ontology, harness, RAG
 grounding, autonomy tiers, integration, tools, data/security,
 observability/FinOps, evaluation, governance) was designed in conversation
-first; this repo builds the demo-able slice of it. Full doc: `docs/architecture.md`.
+first; this repo builds the demo-able slice of it. Full doc: `docs/reference/architecture.md`.
 
 ## The one workflow this demo proves end-to-end
 
@@ -94,7 +94,7 @@ Newest first. One entry per real decision — not every commit.
   multi-workflow breadth.
 - **2026-08-24** — Postgres for transactional truth, Neo4j only for the
   relationship/policy graph layer, not as primary store. *Why:* matches the
-  hybrid-storage argument in docs/architecture.md §3.3, and this project
+  hybrid-storage argument in docs/reference/architecture.md §3.3, and this project
   scoped Neo4j as a named requirement, so it needs to be real, not skipped.
 - **2026-08-24** — Gmail intake will be real (MCP Gmail tools available),
   banking/accounting APIs will be mocked. *Why:* real bank credentials aren't
@@ -801,19 +801,19 @@ requires signing in at `/login` — demo accounts: `alice` /
 
 Neo4j browser UI: http://localhost:7474 (user `neo4j`, password `finance_dev_only` — see `.env.example`).
 
-**Second frontend — `Finance_Agent_Central/` (Lovable-built React/TanStack
+**Second frontend — `frontend/` (Lovable-built React/TanStack
 UI), verified working 2026-08-31.** Real, full `/api/*` parity with the
 Python backend (`src/api/main.py` implements every endpoint this frontend's
 API client expects — companies, proposals, invoices, executed, audit,
 automation, auth, live events). Requires the backend already running on
 **port 8000** (same command as above):
 ```powershell
-cd Finance_Agent_Central
+cd frontend
 bun dev
 ```
 Then open **http://localhost:8080/** — this is the only correct local URL.
 
-**Known trap, found and fixed 2026-08-31:** `Finance_Agent_Central/.env.local`
+**Known trap, found and fixed 2026-08-31:** `frontend/.env.local`
 had drifted to `VITE_API_URL=http://localhost:8001` (no service there),
 which silently fell back to bundled mock company data (Halden Steelworks,
 Vitro Packaging, Port Lyon Freight — none of which exist in Postgres) with
@@ -850,6 +850,6 @@ src/ingestion/         Gmail intake, document extraction
 src/guardrails/        harness: input/output validation, policy checks, audit log
 src/api/                FastAPI app: approval endpoints, demo entry points
 data/seed/              sample contracts, customers, invoices
-docs/architecture.md    full 13-section design doc (reference, not all built)
+docs/reference/architecture.md    full 13-section design doc (reference, not all built)
 docs/demo_script.md    step-by-step walkthrough of the live demo
 ```

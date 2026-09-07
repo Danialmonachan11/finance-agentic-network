@@ -1,6 +1,6 @@
 """Workflow state shape for the invoice-discount graph. Everything a node
 needs travels in this typed dict — no shared mutable blackboard, no node
-reaching into another node's private state (docs/architecture.md §3.1
+reaching into another node's private state (docs/reference/architecture.md §3.1
 handoff discipline)."""
 
 from typing import TypedDict

@@ -1,5 +1,5 @@
 """A real MCP server exposing the read-tier grounded-discount tools
-(docs/architecture.md §3.9's MCP-style tool categorization — designed
+(docs/reference/architecture.md §3.9's MCP-style tool categorization — designed
 there, never actually transported over the MCP protocol until now).
 
 Honest scope note (see BRAIN.md, 2026-08-25): this server is real and

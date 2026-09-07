@@ -50,20 +50,24 @@ point of the whole build.
   resistance** — see `BRAIN.md` for the full security audit and what each
   one closes.
 
-## Architecture
+## Repo layout
 
 ```
-src/orchestration/   LangGraph supervisor + graph definition
-src/agents/          specialist agent prompts/logic (thin — real logic lives in tools)
-src/tools/           deterministic tool functions (the actual policy/calc logic)
-src/ontology/        Postgres schema (SQL) + Neo4j schema/seed scripts
-src/ingestion/       Gmail intake, document extraction (vision LLM)
-src/guardrails/      audit log, policy gate, PII redaction, cost tracker, injection tests
-src/api/             FastAPI app: approval endpoints, demo entry points
-src/mcp_server/      a real MCP server wrapping the policy-lookup tools
-data/seed/           sample companies, contracts, invoices
-docs/architecture.md full 13-section design doc (reference — not all built, see BRAIN.md)
-docs/demo_script.md  step-by-step walkthrough of the live demo
+docs/prd.md                  product requirements (start here for the rebuild)
+docs/market/                 AP/AR market research and the pains a network solves
+docs/reference/              full 13-section design doc + the system-design method deck
+docs/decisions/adr/          architecture decision records
+docs/design/lovable/         Lovable frontend design prompts and integration plans
+docs/demo_script.md          walkthrough of the current live demo
+src/orchestration/           LangGraph graph + nodes
+src/tools/                   deterministic policy/calc logic and the execution tool
+src/ontology/                Postgres schema, Neo4j sync
+src/ingestion/               Gmail intake, document extraction
+src/guardrails/              audit log, policy gate, PII redaction, cost tracker, injection tests
+src/api/                     FastAPI app (JSON API + server-rendered pages)
+src/mcp_server/              MCP server wrapping the policy-lookup tools
+frontend/                    React/TanStack UI (Lovable-built), talks to /api/*
+data/seed/                   sample companies, contracts, invoices
 ```
 
 **Multi-LLM routing**: one OpenRouter key, cheap tier (Haiku) for

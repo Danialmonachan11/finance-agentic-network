@@ -6,7 +6,7 @@ import { subscribeToLiveEvents, type LiveEvent } from "@/lib/api";
  * Subscribes to GET /api/events/stream for the component's lifetime and
  * invalidates the given TanStack Query keys whenever a live event matching
  * `eventTypes` arrives — the queue/audit views then refetch without a
- * manual page reload. See DESIGN-IS-2026-08-26/09-frontend-integration-plan.md, Phase 5.
+ * manual page reload. See docs/design/lovable/09-frontend-integration-plan.md, Phase 5.
  */
 export function useLiveEvents(eventTypes: string[], queryKeys: string[][]) {
   const queryClient = useQueryClient();

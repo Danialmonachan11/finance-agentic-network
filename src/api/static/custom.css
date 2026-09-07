@@ -4,7 +4,7 @@
    the workflow step timeline, and the company-page auth banner. */
 
 /* Palette values approximated from screenshots of the reference Lovable
-   build (see DESIGN-IS-2026-08-26/07-lovable-integration.md) — no exact
+   build (see docs/design/lovable/07-lovable-integration.md) — no exact
    source file exists. */
 :root {
   --pico-font-size: 100%;

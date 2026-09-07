@@ -1,6 +1,6 @@
 """Deterministic discount eligibility + authorization logic.
 
-This is the "grounded decision making" core from docs/architecture.md §3.4:
+This is the "grounded decision making" core from docs/reference/architecture.md §3.4:
 pure functions, no LLM involved, no DB access. db_lookups.py resolves a
 customer's contract/policy from Postgres; this module decides what to do
 with them. Keeping this pure makes it independently testable and keeps the

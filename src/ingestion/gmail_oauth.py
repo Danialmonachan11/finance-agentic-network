@@ -1,4 +1,4 @@
-"""Real Gmail API integration (docs/architecture.md §3.8), closing the gap
+"""Real Gmail API integration (docs/reference/architecture.md §3.8), closing the gap
 documented in gmail_intake.py / BRAIN.md's decisions log (2026-08-24).
 
 One-time interactive OAuth consent (InstalledAppFlow.run_local_server opens

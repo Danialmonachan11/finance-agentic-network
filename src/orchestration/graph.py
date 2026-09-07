@@ -1,5 +1,5 @@
 """LangGraph state machine wiring the specialist nodes together
-(docs/architecture.md §3.1/§3.2). Sequential where a step needs the prior
+(docs/reference/architecture.md §3.1/§3.2). Sequential where a step needs the prior
 step's output, with dynamic routing at three points: non-discount intent
 skips straight to escalation; a grounded rejection (contract expired,
 budget exhausted) skips risk-scoring and drafting entirely — no point

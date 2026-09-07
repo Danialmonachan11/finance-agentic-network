@@ -1,5 +1,5 @@
 // Neo4j relationship layer — mirrors the Postgres entities that matter for
-// discount-policy grounding (docs/architecture.md §3.3/§3.4). This is a
+// discount-policy grounding (docs/reference/architecture.md §3.3/§3.4). This is a
 // derived view for traversal/explanation, NOT the transactional source of
 // truth — Postgres owns balances, amounts, and status.
 //

@@ -1,0 +1,424 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Finance Agentic Network: target architecture (PRD v0.1)",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Danialmonachan11/finance-agentic-network",
+      "revision": "fe7ef9dce058fa75a5ed3959f09ad011cbf5ab0e"
+    },
+    "viewBox": [
+      1240,
+      640
+    ],
+    "views": [
+      {
+        "id": "main-path",
+        "label": "Message to decision",
+        "focus": [
+          "counterparty",
+          "mailbox",
+          "gateway",
+          "agent",
+          "policy",
+          "execution"
+        ],
+        "note": "One inbound message: classified, grounded against the system of record, decided by code."
+      },
+      {
+        "id": "human-gate",
+        "label": "The contested middle",
+        "focus": [
+          "policy",
+          "approver",
+          "execution"
+        ],
+        "note": "Only claims the policy engine cannot settle reach a person. Bank changes always do."
+      },
+      {
+        "id": "network",
+        "label": "Agent to agent",
+        "focus": [
+          "peer",
+          "registry",
+          "gateway"
+        ],
+        "note": "When the counterparty runs the product, messages arrive signed. Unknown identity means email only."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "counterparty",
+      "type": "external",
+      "label": "Counterparty",
+      "sublabel": "AP or AR team, email",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        160,
+        68
+      ]
+    },
+    {
+      "id": "peer",
+      "type": "external",
+      "label": "Counterparty agent",
+      "sublabel": "Runs this product",
+      "pos": [
+        40,
+        110
+      ],
+      "size": [
+        160,
+        68
+      ]
+    },
+    {
+      "id": "mailbox",
+      "type": "external",
+      "label": "Finance mailbox",
+      "sublabel": "Gmail or Outlook",
+      "pos": [
+        240,
+        300
+      ],
+      "size": [
+        160,
+        68
+      ]
+    },
+    {
+      "id": "gateway",
+      "type": "security",
+      "label": "Intake gateway",
+      "sublabel": "Classify, redact, resolve",
+      "pos": [
+        440,
+        300
+      ],
+      "size": [
+        160,
+        68
+      ],
+      "sources": [
+        {
+          "path": "src/ingestion/gmail_intake.py",
+          "label": "today: regex only"
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "Workflow agent",
+      "sublabel": "LangGraph, capped",
+      "pos": [
+        640,
+        300
+      ],
+      "size": [
+        160,
+        68
+      ],
+      "sources": [
+        {
+          "path": "src/orchestration/graph.py"
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "type": "security",
+      "label": "Policy engine",
+      "sublabel": "Deterministic, no LLM",
+      "pos": [
+        840,
+        300
+      ],
+      "size": [
+        160,
+        68
+      ],
+      "sources": [
+        {
+          "path": "src/tools/discount_logic.py"
+        }
+      ]
+    },
+    {
+      "id": "execution",
+      "type": "security",
+      "label": "Execution tool",
+      "sublabel": "Revalidate, idempotent",
+      "pos": [
+        1040,
+        300
+      ],
+      "size": [
+        160,
+        68
+      ],
+      "sources": [
+        {
+          "path": "src/tools/execution.py"
+        }
+      ]
+    },
+    {
+      "id": "approver",
+      "type": "frontend",
+      "label": "Approver console",
+      "sublabel": "Own company only",
+      "pos": [
+        1040,
+        110
+      ],
+      "size": [
+        160,
+        68
+      ]
+    },
+    {
+      "id": "registry",
+      "type": "security",
+      "label": "Identity registry",
+      "sublabel": "VAT / Peppol ID + key",
+      "pos": [
+        440,
+        500
+      ],
+      "size": [
+        160,
+        68
+      ]
+    },
+    {
+      "id": "llm",
+      "type": "cloud",
+      "label": "LLM provider",
+      "sublabel": "Cheap reads, strong drafts",
+      "pos": [
+        640,
+        500
+      ],
+      "size": [
+        160,
+        68
+      ]
+    },
+    {
+      "id": "erp",
+      "type": "database",
+      "label": "System of record",
+      "sublabel": "Invoices, contracts",
+      "pos": [
+        840,
+        500
+      ],
+      "size": [
+        160,
+        68
+      ]
+    },
+    {
+      "id": "audit",
+      "type": "database",
+      "label": "Audit, cost, events",
+      "sublabel": "One trace per case",
+      "pos": [
+        1040,
+        500
+      ],
+      "size": [
+        160,
+        68
+      ],
+      "sources": [
+        {
+          "path": "src/guardrails/audit.py"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Trust boundary: nothing past here trusts message text",
+      "wraps": [
+        "gateway",
+        "agent",
+        "policy",
+        "execution",
+        "registry",
+        "llm",
+        "erp",
+        "audit"
+      ],
+      "pad": 28
+    }
+  ],
+  "connections": [
+    {
+      "id": "email-in",
+      "from": "counterparty",
+      "to": "mailbox",
+      "label": "email",
+      "variant": "emphasis",
+      "labelDy": -26
+    },
+    {
+      "id": "poll",
+      "from": "mailbox",
+      "to": "gateway",
+      "label": "poll, dedupe",
+      "variant": "emphasis",
+      "labelAt": [
+        386,
+        378
+      ]
+    },
+    {
+      "id": "case",
+      "from": "gateway",
+      "to": "agent",
+      "label": "typed case",
+      "variant": "emphasis",
+      "labelAt": [
+        591,
+        378
+      ]
+    },
+    {
+      "id": "claim",
+      "from": "agent",
+      "to": "policy",
+      "label": "extracted claim",
+      "variant": "emphasis",
+      "labelDy": -26
+    },
+    {
+      "id": "auto",
+      "from": "policy",
+      "to": "execution",
+      "label": "within policy, low risk",
+      "variant": "emphasis",
+      "labelDy": -26
+    },
+    {
+      "id": "contested",
+      "from": "policy",
+      "to": "approver",
+      "label": "contested middle",
+      "fromSide": "top",
+      "toSide": "left",
+      "labelAt": [
+        928,
+        128
+      ]
+    },
+    {
+      "id": "decide",
+      "from": "approver",
+      "to": "execution",
+      "label": "approve or decline",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1190,
+        244
+      ]
+    },
+    {
+      "id": "a2a",
+      "from": "peer",
+      "to": "gateway",
+      "label": "signed structured message",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "top",
+      "labelAt": [
+        350,
+        128
+      ]
+    },
+    {
+      "id": "verify",
+      "from": "gateway",
+      "to": "registry",
+      "label": "verify identity",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        590,
+        434
+      ]
+    },
+    {
+      "id": "redacted",
+      "from": "agent",
+      "to": "llm",
+      "label": "redacted text only",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        790,
+        434
+      ]
+    },
+    {
+      "id": "ground",
+      "from": "policy",
+      "to": "erp",
+      "label": "contract, budget, status",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        992,
+        434
+      ]
+    },
+    {
+      "id": "trace",
+      "from": "execution",
+      "to": "audit",
+      "label": "write + audit row",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1190,
+        434
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Code decides, the model reads and drafts",
+      "items": [
+        "Policy engine and execution tool never call an LLM",
+        "A wrong discount is money, so the number is never a model output"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Email first, agent to agent when a peer exists",
+      "items": [
+        "Day one works against a plain mailbox",
+        "Signed messages unlock autonomous bank-detail changes"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Human attention goes to the contested middle",
+      "items": [
+        "Target: 30 of 100 messages reach a person",
+        "Bank-detail changes are never autonomous"
+      ]
+    }
+  ]
+}
