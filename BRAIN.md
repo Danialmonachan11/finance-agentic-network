@@ -522,6 +522,46 @@ bug. Not fixed here (out of scope for this change); a fresh `data.seed.seed`
 re-run would reset it, at the cost of losing accumulated history again
 (same tradeoff logged every other time this repo has re-seeded).
 
+## Product model change: the unit is the relationship (2026-09-08)
+
+**User feedback that triggered it, verbatim:** "currently this project is
+like handling multiple companies where i get a birds eye view but rather i
+want this as a solution where its setup between two companies.. and it
+runs between those two companies only ... every company relation is
+unique lets say a has b c d companies a to b and a to c and a to d are
+different agentic relationship which covers all the architecture setup."
+
+**What was wrong.** The 2026-08-24 rework removed the fixed "us" and made
+any company a seller or buyer. Good. But the app on top of it stayed a
+platform view: one approver table for everyone, dashboards listing every
+company, one mailbox config. The PRD v0.1 and the four diagrams of
+2026-09-07 were written from that code, not from the product the user
+had in mind, because the question was never asked.
+
+**The model now.** The product is deployed per pair of companies. A to B
+is one setup with its own contract, policy, approvers on each side,
+channel, caps, and audit trail. A to C is a separate setup. A company
+runs several of these side by side. There is no view above the pairs.
+"Network" means the sum of a company's pairs, nothing more.
+
+**Three decisions, all on the assistant's recommendation:**
+1. Design for two instances (each company runs its own copy and the
+   copies talk over the wire). Ship the demo as one instance that hosts
+   both sides of a pair, labelled as such.
+2. Pairing is invite and accept. A invites B, both agree the contract and
+   policy. While the invite is pending, A's agent works in email-only
+   mode against B's mailbox.
+3. A company sees a home screen listing its own pairs with a status each.
+   No cross-company view of any kind.
+
+**What it changes.** `contract` is already one seller and one buyer, so
+the relationship is roughly "contract plus everything attached". What
+moves under it: approvers, mailbox and channel config, identity and
+signing keys for both ends, per-pair caps, and the audit trail. Approver
+scoping (R8) stops being a bolt-on and becomes the data model. PRD goes
+to v0.2; architecture and status-inquiry diagrams get redrawn as two
+mirrored halves with the pair in the middle.
+
 ## Honest gaps — worth naming directly
 
 Things that are built and working, but where the current implementation
