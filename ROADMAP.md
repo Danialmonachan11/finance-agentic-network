@@ -1,31 +1,31 @@
-# Roadmap
 
-The working board for the rebuild. One line per item, with the reason it is
-on the list. Move items between sections as they change state; do not delete
-finished ones. Requirement ids (R1..R18) refer to `docs/prd.md`.
+## Production readiness
 
-Order inside "To do" is priority order.
+Decided 2026-09-08: the target is a public demo site and a publishable
+working setup, not a laptop prototype. The shape stays small: one web
+process, one worker process, one Postgres. No Kubernetes, no broker.
 
-## In progress
+Keep: Python, FastAPI, LangGraph + Postgres checkpointer, Postgres 16,
+Docker, the React frontend under `frontend/`.
+Drop: Neo4j (cycle check becomes a recursive query in Postgres), the Jinja
+UI (the React app is the demo).
 
-- (nothing)
+In order:
 
-## To do
-
-1. **Decide buyer-side vs seller-side (PRD open question 3).**
-   Why: it picks the first customer, the first metric, and who the
-   counterparty is in every diagram. Recommendation: buyer side, mid-market.
-2. **Decide ERP strategy for v1 (PRD open question 2).**
-   Why: integration is the biggest cost and not the product. Recommendation:
-   Postgres is the system of record for v1, one read-adapter interface so a
-   real ERP can slot in later.
-3. **Draw the bank-detail change flow.** (P3)
-   Why: the one pain the network makes safer rather than faster, and it
-   has no diagram yet.
-4. **Build the status-inquiry path, shadow mode.** (R1..R5)
-   Real intent classifier (four intents), resolver on counterparty + amount +
-   reference, drafts only. Why: read-only, no money moves, and it forces the
-   two pieces every later feature needs.
+1. Alembic migrations; the seed script stops owning the schema.
+2. CI on GitHub Actions: unit tests, ruff, docker build, injection suite.
+3. Pin dependencies with a lock file.
+4. Worker process for mailbox polling and graph runs; Postgres queue with
+   SKIP LOCKED.
+5. Structured JSON logs with workflow id; Sentry; Langfuse or OpenTelemetry
+   for LLM traces.
+6. Rate limits on login and intake; daily LLM spend kill switch (R16).
+7. Company-scoped approvers (R8); per-agent tool allowlist (R17).
+8. Demo mode flags: seeded data, no real mailbox, drafts only, reset button,
+   hard daily budget.
+9. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
+   Vercel or Cloudflare Pages.
+ds.
 5. **Guardrail gaps.** Company-scoped approvers (R8), per-workflow caps (R16),
    tool allowlist (R17). Why: turns "happens to be safe" into "cannot be
    unsafe".
