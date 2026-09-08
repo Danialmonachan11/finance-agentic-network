@@ -144,59 +144,6 @@ export function companyIdByName(companies: Company[], name: string): string | un
 /* Documents — only rows that really have a generated PDF appear here.       */
 /* ------------------------------------------------------------------------ */
 
-export interface InvoiceDocument {
-  invoice_number: string;
-  filename: string;
-  generated_at: string;
-  pages: number;
-  size_kb: number;
-  /** Line items as they appear on the generated document. */
-  lines: { description: string; qty: number; unit_price: number }[];
-  issued_by: string;
-  issued_to: string;
-  due_date: string;
-  notes: string;
-}
-
-export const invoiceDocuments: InvoiceDocument[] = [
-  {
-    invoice_number: "INV-2001",
-    filename: "INV-2001_nordwind_aurea.pdf",
-    generated_at: "2026-08-05T10:22:00Z",
-    pages: 1,
-    size_kb: 34.8,
-    issued_by: "Nordwind Logistik GmbH",
-    issued_to: "Aurea Retail S.A.",
-    due_date: "2026-09-04",
-    lines: [
-      { description: "Groupage freight, Hamburg → Barcelona, week 31", qty: 12, unit_price: 84.0 },
-      { description: "Customs handling", qty: 4, unit_price: 63.0 },
-      { description: "Pallet exchange fee", qty: 30, unit_price: 8.0 },
-    ],
-    notes: "Payment within 30 days. Volume tier B applies from 2026-08-17.",
-  },
-  {
-    invoice_number: "INV-2019",
-    filename: "INV-2019_nordwind_vitro.pdf",
-    generated_at: "2026-08-12T07:41:00Z",
-    pages: 2,
-    size_kb: 51.2,
-    issued_by: "Nordwind Logistik GmbH",
-    issued_to: "Vitro Packaging BV",
-    due_date: "2026-09-11",
-    lines: [
-      { description: "Temperature-controlled transport, Rotterdam → Lyon", qty: 5, unit_price: 310.1 },
-      { description: "Night surcharge", qty: 5, unit_price: 42.0 },
-      { description: "Return empties", qty: 12, unit_price: 40.0 },
-    ],
-    notes: "5% early-settlement discount if paid within 10 days, per clause 3.1.",
-  },
-];
-
-export function documentFor(invoiceNumber: string): InvoiceDocument | undefined {
-  return invoiceDocuments.find((d) => d.invoice_number === invoiceNumber);
-}
-
 /* ------------------------------------------------------------------------ */
 /* Automation & cost, and per-model usage now come from GET /api/automation  */
 /* — see frontend/src/lib/api.ts's getAutomation() and          */

@@ -28,8 +28,10 @@ function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: () => login(username, password),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["me"] });
-      navigate({ to: "/queue" });
+      // Drop every cached query: whatever was fetched signed out or as the
+      // previous user must not survive into this session.
+      queryClient.clear();
+      navigate({ to: "/pairs" });
     },
   });
 

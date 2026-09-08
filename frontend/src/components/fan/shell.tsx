@@ -25,7 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const logoutMutation = useMutation({
     mutationFn: logout,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["me"] });
+      queryClient.clear();
       navigate({ to: "/login" });
     },
   });
