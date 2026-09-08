@@ -6,45 +6,31 @@ read + compose scopes only — no send) — see BRAIN.md's decisions log
 gap rather than a fake success, until real OAuth credentials were available.
 """
 
-import re
 import sys
+import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from src.guardrails.audit import log_audit
 from src.ingestion.gmail_oauth import create_gmail_draft, fetch_unread_emails
 from src.ontology.db import get_conn
 from src.orchestration.graph import run_workflow
 from src.orchestration.state import WorkflowState
-
-INVOICE_NUMBER_PATTERN = re.compile(r"\bINV-\d+\b")
-
-
-def extract_invoice_number(email_text: str) -> str | None:
-    match = INVOICE_NUMBER_PATTERN.search(email_text)
-    return match.group(0) if match else None
-
-
-def resolve_invoice_id(invoice_number: str) -> str | None:
-    with get_conn() as conn, conn.cursor() as cur:
-        cur.execute("SELECT id FROM invoice WHERE invoice_number = %s", (invoice_number,))
-        row = cur.fetchone()
-        return str(row[0]) if row else None
+from src.tools.resolver import resolve_invoice
 
 
 def run_intake(subject: str, body: str, sender: str) -> WorkflowState | None:
-    """Intake/Triage agent's non-LLM half: resolve which invoice (if any)
-    this email is about, before handing off to the LangGraph workflow.
-    Returns None if no invoice number is found — that's a routing decision
-    made here (deterministic), not something worth spending an LLM call on."""
-    invoice_number = extract_invoice_number(body) or extract_invoice_number(subject)
-    if invoice_number is None:
+    """Intake's non-LLM half: resolve which invoice this email is about
+    (sender's company plus quoted number or amount, PRD R2) before any
+    model call. Unresolvable mail is logged for a human with the reason
+    (R3) and returns None: never silently dropped, never guessed."""
+    hit = resolve_invoice(sender, f"{subject}\n{body}")
+    if hit is None:
+        log_audit(uuid.uuid4(), step="intake_resolve", agent="intake_gateway",
+                   decision="needs_human", reason=f"no unambiguous invoice for sender {sender!r}")
         return None
-
-    invoice_id = resolve_invoice_id(invoice_number)
-    if invoice_id is None:
-        return None  # mentions an invoice number we don't have on file — a real system would escalate this, not silently drop it
-
+    invoice_id, invoice_number = hit
     return run_workflow(invoice_id, invoice_number, email_text=body)
 
 
@@ -79,7 +65,8 @@ def poll_and_process(query: str = "in:inbox -in:draft subject:INV-1002") -> list
         if final_state is None:
             continue
         results.append(final_state)
-        if final_state.get("proposal_status") in ("proposed", "auto_executed"):
+        # Shadow mode (R5): a draft, never a send, until the pair enables replies.
+        if final_state.get("proposal_status") in ("proposed", "auto_executed", "status_answered"):
             create_gmail_draft(
                 to=email["sender"],
                 subject=f"Re: {email['subject']}",

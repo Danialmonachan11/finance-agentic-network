@@ -34,6 +34,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://finance:finance_dev_
 
 from src.guardrails.audit import get_audit_trail
 from src.orchestration.nodes import (
+    answer_status,
     auto_execute,
     auto_reject,
     escalate,
@@ -60,11 +61,13 @@ def build_graph(checkpointer):
     graph.add_node("auto_reject", auto_reject)
     graph.add_node("auto_execute", auto_execute)
     graph.add_node("escalate", escalate)
+    graph.add_node("answer_status", answer_status)
 
     graph.add_edge(START, "intake_triage")
     graph.add_conditional_edges("intake_triage", route_after_triage, {
-        "extract_claim": "extract_claim", "escalate": "escalate",
+        "extract_claim": "extract_claim", "answer_status": "answer_status", "escalate": "escalate",
     })
+    graph.add_edge("answer_status", END)
     graph.add_edge("extract_claim", "ground_decision")
     graph.add_conditional_edges("ground_decision", route_after_grounding, {
         "risk_score": "risk_score", "escalate": "escalate",

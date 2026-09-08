@@ -78,6 +78,23 @@ def get_invoice_parties(invoice_id: str) -> tuple[str, str]:
         return row[0], row[1]
 
 
+def get_invoice_status(invoice_id: str) -> dict:
+    """The facts a status reply may state (PRD R4). This is the v1 read
+    adapter over the system of record; a real ERP plugs in behind this
+    function later (decision ledger, 2026-09-08)."""
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT invoice_number, amount, currency, status, due_date, issued_date FROM invoice WHERE id = %s",
+            (invoice_id,),
+        )
+        row = cur.fetchone()
+        if row is None:
+            raise ValueError(f"no such invoice: {invoice_id}")
+        number, amount, currency, status, due, issued = row
+        return {"invoice_number": number, "amount": float(amount), "currency": currency,
+                "status": status, "due_date": due.isoformat(), "issued_date": issued.isoformat()}
+
+
 def evaluate_invoice_discount(invoice_id: str, claimed_rate: float | None = None) -> EligibilityResult:
     """calculate_discount() + check_authorization() combined: the full
     grounded-decision flow from §3.4, steps 2-5, run against real Postgres

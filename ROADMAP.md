@@ -12,21 +12,24 @@ Order inside "To do" is priority order.
 
 ## To do
 
-1. **Build the status-inquiry path, shadow mode.** (R1..R5)
-   Real intent classifier (four intents), resolver on counterparty + amount +
-   reference, drafts only. Why: read-only, no money moves, and it forces the
-   two pieces every later feature needs.
-2. **Pair setup flow.** Invite and accept between two companies, contract
+1. **Pair setup flow.** Invite and accept between two companies, contract
    and policy agreed on the pair, approvers named per side, a company home
    screen listing its pairs (R19..R21). Why: today pairs are seeded as
-   already active; the demo needs the real flow.
-3. **Remaining guardrail gaps.** Per-workflow caps (R16), per-agent tool
+   already active; the demo needs the real flow. Includes the per-pair
+   switch that turns status-reply drafts into sends (R5).
+2. **Remaining guardrail gaps.** Per-workflow caps (R16), per-agent tool
    allowlist (R17). Why: turns "happens to be safe" into "cannot be unsafe".
-4. **Update BRAIN.md with the 2026-09-07 decisions.**
+3. **Update BRAIN.md with the 2026-09-07 decisions.**
    Why: it is the history doc and it still ends before the restart.
 
 ## Done
 
+- 2026-09-08 Status-inquiry path in shadow mode (R1..R5): four intents,
+  `src/tools/resolver.py` matches sender company plus number or amount,
+  `answer_status` phrases only the invoice row's facts, draft never sent,
+  bank changes escalate by name (R10). Verified live against OpenRouter and
+  the seeded data. Why: the first read-only autonomous path, and it forced
+  the classifier and resolver every later feature needs.
 - 2026-09-08 Decided: buyer side first, mid-market; Postgres is the system
   of record for v1 behind one read adapter. Logged in the PRD ledger.
 - 2026-09-08 Pair table and pair-scoped execution (R8, R19, R20 in part).

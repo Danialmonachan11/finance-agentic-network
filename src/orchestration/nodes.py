@@ -24,13 +24,18 @@ from src.ontology.db import get_conn
 from src.orchestration.events import publish_event
 from src.orchestration.llm import CHEAP_MODEL, STRONG_MODEL, get_llm
 from src.orchestration.state import WorkflowState
-from src.tools.db_lookups import evaluate_invoice_discount, get_invoice_parties
+from src.tools.db_lookups import evaluate_invoice_discount, get_invoice_parties, get_invoice_status
 from src.ontology.sync_graph import find_network_cycle
 from src.tools.execution import ExecutionError, execute_discount
 
 
 class IntentClassification(BaseModel):
-    intent: str = Field(description="one of: discount_request, dispute, payment_inquiry, other")
+    intent: str = Field(description=(
+        "one of: status_inquiry (asking where a payment is, whether an invoice was received, "
+        "approved, or when it will be paid), discount_request (claiming or asking for a discount, "
+        "deduction, or short-pay), bank_change (asking to change bank account, IBAN, or payment "
+        "details), other"
+    ))
 
 
 class ClaimExtraction(BaseModel):
@@ -56,7 +61,38 @@ def intake_triage(state: WorkflowState) -> dict:
 
 
 def route_after_triage(state: WorkflowState) -> str:
-    return "extract_claim" if state["intent"] == "discount_request" else "escalate"
+    """Only two intents get autonomous handling. A bank_change is never
+    applied by the graph (R10): it escalates like anything unknown."""
+    return {"discount_request": "extract_claim", "status_inquiry": "answer_status"}.get(state["intent"], "escalate")
+
+
+def answer_status(state: WorkflowState) -> dict:
+    """Status inquiry (PRD R4, R5): answer with the invoice's real state.
+    The facts come from the invoice row; the model only phrases them. This
+    node writes no proposal and moves no money. Shadow mode: the reply is a
+    draft, and sending is decided outside the graph by the pair's settings."""
+    facts = get_invoice_status(state["invoice_id"])
+    llm = get_llm("strong")
+    response = llm.invoke(
+        "Write a short, professional reply to a supplier asking about the status of an invoice. "
+        "State only these facts, do not add or guess any others:\n"
+        f"Invoice {facts['invoice_number']}, {facts['amount']:.2f} {facts['currency']}, "
+        f"status: {facts['status']}, due date: {facts['due_date']}. "
+        "Do not say the invoice is approved, scheduled, or paid unless the status says so. "
+        "Keep it under 60 words, no subject line."
+    )
+    draft = response.content
+    log_llm_cost(state["workflow_id"], "answer_status", STRONG_MODEL, response)
+    log_audit(
+        state["workflow_id"], step="answer_status", agent="status_agent",
+        decision="draft_created", reason=f"invoice status {facts['status']}, due {facts['due_date']}",
+        tool_calls={"tool": "get_invoice_status", "invoice_id": state["invoice_id"]},
+        model=STRONG_MODEL,
+    )
+    publish_event(uuid.UUID(state["workflow_id"]), "workflow.status_answered", {
+        "invoice_number": facts["invoice_number"], "status": facts["status"],
+    })
+    return {"proposal_status": "status_answered", "draft_response": draft}
 
 
 def extract_claim(state: WorkflowState) -> dict:
@@ -365,10 +401,14 @@ def escalate(state: WorkflowState) -> dict:
     non-discount intent, or a grounded rejection. No LLM call: escalation
     is a routing decision, not a generative one."""
     is_grounded_rejection = state.get("intent") == "discount_request" and state.get("eligibility_eligible") is False
-    reason = (
-        f"grounded rejection: {state.get('eligibility_reason')}" if is_grounded_rejection
-        else f"intent={state.get('intent')}"
-    )
+    if is_grounded_rejection:
+        reason = f"grounded rejection: {state.get('eligibility_reason')}"
+    elif state.get("intent") == "bank_change":
+        # R10/R11: never applied by the graph; a human verifies with the
+        # contact already on file, not the one in the message.
+        reason = "bank-detail change: never applied automatically; verify with the contact on file"
+    else:
+        reason = f"intent={state.get('intent')}"
 
     if is_grounded_rejection:
         # Persist the rejection so Postgres reflects reality — otherwise a

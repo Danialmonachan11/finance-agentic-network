@@ -44,27 +44,36 @@ discount on INV-2041." Here is what touches it, in order, and why.
 2. **PII redaction** (`src/guardrails/pii_redaction.py`) masks emails,
    phones, and IBANs before any text goes to the model. Why: the model is
    a third party. The decision never needs a person's phone number.
-3. **Intake triage** (`intake_triage` in `src/orchestration/nodes.py`) asks
-   the cheap model "what kind of message is this". Only a discount request
-   continues. Everything else goes to a human queue. Why the cheap model:
-   classification is easy and this runs on every message.
-4. **Claim extraction** (`extract_claim`) asks the cheap model for the
+3. **Resolver** (`src/tools/resolver.py`) works out which invoice the
+   message is about, before any model call: the sender's company from the
+   email domain, plus a quoted invoice number or a quoted amount. Two
+   candidates means no match and a human, never a guess. Why not the
+   invoice number alone: senders misquote it, quote several, or give the
+   amount instead.
+4. **Intake triage** (`intake_triage` in `src/orchestration/nodes.py`) asks
+   the cheap model "what kind of message is this": status inquiry,
+   discount request, bank change, or other. Status inquiries go to
+   `answer_status`, which reads the invoice row and has the model phrase
+   those facts and nothing else, as a draft. Discount requests continue
+   below. Bank changes and everything else go to a human. Why the cheap
+   model: classification is easy and this runs on every message.
+5. **Claim extraction** (`extract_claim`) asks the cheap model for the
    claimed rate as a number. This is a read, not a decision.
-5. **Grounding** (`ground_decision`, which calls
+6. **Grounding** (`ground_decision`, which calls
    `src/tools/db_lookups.py` and then `src/tools/discount_logic.py`) checks
    that number against the contract in Postgres: is the contract active, is
    the rate within the ceiling, is there budget left this period. No model.
    Pure function, testable offline. This is the heart of the system.
-6. **Risk score** (`risk_score`) adds a heuristic on top: how far the claim
+7. **Risk score** (`risk_score`) adds a heuristic on top: how far the claim
    is from the contract, and whether the two companies sit in a trading
    loop. Low risk executes on its own, high risk declines with a drafted
    reply, the middle goes to a human. Why three outcomes: a human should see
    only the cases a rule cannot settle, otherwise the product saves no time.
-7. **Propose, auto-execute, auto-reject, escalate** are the four terminal
+8. **Propose, auto-execute, auto-reject, escalate** are the four terminal
    nodes. Each writes a row to `discount_proposal` so the UI shows reality,
    an audit row so the trace is complete, and an event so anything
    listening (the alerting consumer, a dashboard) hears about it.
-8. **Execution** (`src/tools/execution.py`) is the only function that can
+9. **Execution** (`src/tools/execution.py`) is the only function that can
    mark a proposal executed. It re-derives eligibility from scratch for the
    exact proposal being approved, checks the approver's rank, and flips the
    row with an atomic conditional update. Why re-derive: the proposal might
@@ -103,7 +112,9 @@ else needs to know.
 ### Tools (`src/tools/`)
 
 `discount_logic.py` is the pure policy function. No database, no model.
-`db_lookups.py` fetches the rows it needs and calls it. `execution.py` is
+`db_lookups.py` fetches the rows it needs and calls it, and holds
+`get_invoice_status`, the one read the status reply may state facts from.
+`resolver.py` maps a message to an invoice. `execution.py` is
 the one writer. `scribo_client.py` talks to a third-party invoicing product
 and maps to no requirement in the PRD; it will go when it gets in the way.
 

@@ -12,7 +12,7 @@ class WorkflowState(TypedDict, total=False):
     invoice_number: str
     email_text: str            # the raw claim text (from Gmail in Phase 6; from seed data for now)
 
-    intent: str                 # intake_triage output: 'discount_request' | 'other'
+    intent: str                 # intake_triage output: 'status_inquiry' | 'discount_request' | 'bank_change' | 'other'
     extracted_claim_rate: float  # extract_claim output — an LLM's read of the claim, NOT yet trusted
 
     eligibility_eligible: bool   # ground_decision output — the actual grounded truth
@@ -23,7 +23,7 @@ class WorkflowState(TypedDict, total=False):
     risk_score: float
     risk_note: str
 
-    proposal_status: str        # 'proposed' | 'auto_executed' | 'auto_rejected' | 'escalated_no_match'
+    proposal_status: str        # 'proposed' | 'auto_executed' | 'auto_rejected' | 'status_answered' | 'escalated_no_match'
     draft_response: str
 
     terminal_reason: str        # set when the graph ends early (escalation, non-discount intent)

@@ -145,5 +145,54 @@ class EscalateScopedToWorkflow(unittest.TestCase):
         self.assertEqual(params, ("inv-1", state["workflow_id"]))
 
 
+class StatusInquiryPath(unittest.TestCase):
+    """Why: the status path is read-only and must stay that way. Routing
+    sends only two intents to autonomous nodes; a bank change never gets
+    one. The resolver matches on counterparty plus reference or amount, and
+    an ambiguous match is a human's problem, not a guess (R2, R3)."""
+
+    def test_routing(self):
+        from src.orchestration.nodes import route_after_triage
+        self.assertEqual(route_after_triage({"intent": "status_inquiry"}), "answer_status")
+        self.assertEqual(route_after_triage({"intent": "discount_request"}), "extract_claim")
+        for intent in ("bank_change", "other", "anything-else"):
+            self.assertEqual(route_after_triage({"intent": intent}), "escalate", intent)
+
+    def test_extract_references(self):
+        from decimal import Decimal
+        from src.tools.resolver import extract_references, sender_domain
+        refs = extract_references("Re INV-1001 / inv-1002, EUR 4,200.00 due 2026-07-01, 10% off, 1.234,56")
+        self.assertEqual(refs.invoice_numbers, ("INV-1001", "INV-1002"))
+        self.assertEqual(refs.amounts, (Decimal("4200.00"), Decimal("1234.56")))
+        self.assertEqual(sender_domain("Anna <anna@Nordwind-Logistik.de>"), "nordwind-logistik.de")
+
+    def test_ambiguous_match_is_none(self):
+        from src.tools import resolver
+        two_by_amount = [("id1", "INV-1", False), ("id2", "INV-2", False)]
+        cur = FakeCursor(rows=[])
+        cur.fetchall = lambda: two_by_amount
+        refs = resolver.References((), (resolver.Decimal("10.00"),))
+        with mock.patch.object(resolver, "get_conn", fake_get_conn(cur)):
+            self.assertIsNone(resolver.find_invoice("x.example", refs))
+        self.assertIsNone(resolver.find_invoice("", refs))
+
+    def test_answer_status_states_only_row_facts(self):
+        from src.orchestration import nodes
+        facts = {"invoice_number": "INV-1001", "amount": 4200.0, "currency": "EUR",
+                 "status": "received", "due_date": "2026-07-01", "issued_date": "2026-06-01"}
+        fake_llm = mock.Mock()
+        fake_llm.invoke.return_value = mock.Mock(content="Invoice INV-1001 was received; due 2026-07-01.")
+        state = {"workflow_id": "00000000-0000-0000-0000-000000000002", "invoice_id": "inv-1"}
+        with mock.patch.object(nodes, "get_invoice_status", return_value=facts), \
+             mock.patch.object(nodes, "get_llm", return_value=fake_llm), \
+             mock.patch.object(nodes, "log_llm_cost"), mock.patch.object(nodes, "log_audit"), \
+             mock.patch.object(nodes, "publish_event"):
+            out = nodes.answer_status(state)
+        self.assertEqual(out["proposal_status"], "status_answered")
+        prompt = fake_llm.invoke.call_args.args[0]
+        self.assertIn("received", prompt)
+        self.assertIn("do not add or guess", prompt)
+
+
 if __name__ == "__main__":
     unittest.main()

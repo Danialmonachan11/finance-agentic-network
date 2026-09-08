@@ -261,16 +261,16 @@ One line per box. Add to this, never edit history.
 
 | Requirement | State in `src/` |
 |---|---|
-| R1 classify | Partial: four intents, one hardcoded Gmail query |
-| R2 resolve | Missing: regex on invoice number only |
-| R3 human queue for unresolved | Missing: returns None |
-| R4, R5 status inquiry | Missing |
+| R1 classify | Present: status_inquiry, discount_request, bank_change, other. The Gmail poll query is still hardcoded |
+| R2 resolve | Present: `src/tools/resolver.py`, sender's company plus quoted number or amount; ambiguous means no match |
+| R3 human queue for unresolved | Partial: audit row with reason written; no queue screen yet |
+| R4, R5 status inquiry | Present in shadow mode: facts from the invoice row, model phrases only, draft never sent. The per-pair send switch waits for the pair setup flow |
 | R6, R7 claims | Present; 2026-09-07 review bugs fixed 2026-09-08, covered by `tests/test_money_path.py` |
 | R8 approver scoping | Present: approvers carry company and pair; execution and decline refuse other companies |
 | R19 pairing | Partial: `pair` table with invited/active status, execution requires active; no invite flow yet |
 | R20, R21 pair config and home screen | Missing |
 | R9 idempotent execution | Present; revalidation now checks the executed proposal's own rate |
-| R10 to R12 bank change | Missing |
+| R10 to R12 bank change | Partial: classified and escalated, never applied (R10). Verification task and signed path missing |
 | R13, R14 network | Missing |
 | R15 audit and cost | Present |
 | R16 caps | Missing |
