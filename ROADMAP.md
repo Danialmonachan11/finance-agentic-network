@@ -12,18 +12,20 @@ Order inside "To do" is priority order.
 
 ## To do
 
-1. **Pair setup flow.** Invite and accept between two companies, contract
-   and policy agreed on the pair, approvers named per side, a company home
-   screen listing its pairs (R19..R21). Why: today pairs are seeded as
-   already active; the demo needs the real flow. Includes the per-pair
-   switch that turns status-reply drafts into sends (R5).
-2. **Remaining guardrail gaps.** Per-workflow caps (R16), per-agent tool
+1. **Remaining guardrail gaps.** Per-workflow caps (R16), per-agent tool
    allowlist (R17). Why: turns "happens to be safe" into "cannot be unsafe".
-3. **Update BRAIN.md with the 2026-09-07 decisions.**
+2. **Update BRAIN.md with the 2026-09-07 decisions.**
    Why: it is the history doc and it still ends before the restart.
 
 ## Done
 
+- 2026-09-08 Pair setup flow (R19, R21, R5 switch): invite and accept over
+  `/api/pairs`, only the invited side can accept, a per-pair switch that
+  turns status replies from drafts into sends, `/pairs` home screen in the
+  React app scoped to the signed-in company. Not built: naming approvers
+  through the UI (they are seeded), caps and channel config on the pair.
+  Why: the product is deployed per pair, so the pair needed a real
+  lifecycle before anything else could hang off it.
 - 2026-09-08 Status-inquiry path in shadow mode (R1..R5): four intents,
   `src/tools/resolver.py` matches sender company plus number or amount,
   `answer_status` phrases only the invoice row's facts, draft never sent,
@@ -78,6 +80,8 @@ Things that would be better but do not block the list above.
   the way. Neither maps to a PRD requirement.
 - Golden set of 50 real-shaped messages for the intent classifier, before
   anyone tunes a prompt.
+- Approvers are created by the seed script only. A pair admin should be
+  able to name approvers for their side from the `/pairs` page (R20).
 - The `/companies` pages still show every company. They are the old
   bird's-eye view and go when the Jinja UI goes.
 

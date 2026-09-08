@@ -194,5 +194,36 @@ class StatusInquiryPath(unittest.TestCase):
         self.assertIn("do not add or guess", prompt)
 
 
+class ReplyDeliveryGate(unittest.TestCase):
+    """Why: shadow mode is the rollout promise (R5). Only a status reply on
+    an active pair with the switch on is sent. Everything else, including
+    every discount reply, is a draft a human reads first."""
+
+    def _deliver(self, status, settings):
+        from src.ingestion import gmail_intake
+        state = {"invoice_id": "inv-1", "proposal_status": status, "draft_response": "hi"}
+        email = {"sender": "a@b.example", "subject": "s", "threadId": "t"}
+        with mock.patch.object(gmail_intake, "pair_settings_for_invoice", return_value=settings), \
+             mock.patch.object(gmail_intake, "send_gmail_message") as send, \
+             mock.patch.object(gmail_intake, "create_gmail_draft") as draft:
+            result = gmail_intake.deliver_reply(state, email)
+        return result, send.called, draft.called
+
+    def test_status_reply_on_enabled_active_pair_is_sent(self):
+        self.assertEqual(self._deliver("status_answered", {"status": "active", "auto_reply_status_inquiry": True}),
+                         ("sent", True, False))
+
+    def test_everything_else_is_a_draft(self):
+        cases = [
+            ("status_answered", {"status": "active", "auto_reply_status_inquiry": False}),
+            ("status_answered", {"status": "invited", "auto_reply_status_inquiry": True}),
+            ("status_answered", None),
+            ("proposed", {"status": "active", "auto_reply_status_inquiry": True}),
+            ("auto_executed", {"status": "active", "auto_reply_status_inquiry": True}),
+        ]
+        for status, settings in cases:
+            self.assertEqual(self._deliver(status, settings), ("drafted", False, True), (status, settings))
+
+
 if __name__ == "__main__":
     unittest.main()

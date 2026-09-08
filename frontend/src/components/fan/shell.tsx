@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { getMe, getProposals, logout } from "@/lib/api";
 
 const primaryNav = [
+  { to: "/pairs", label: "Pairs", badge: false },
   { to: "/queue", label: "Approval queue", badge: true },
   { to: "/", label: "Companies" },
   { to: "/invoices", label: "Invoices" },

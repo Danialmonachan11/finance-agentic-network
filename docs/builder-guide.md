@@ -167,6 +167,14 @@ Why the approver identity comes from the session and not the form: a
 security audit found the role was a form field anyone could edit. The
 approve endpoint now trusts only what the server put in the cookie.
 
+The pair routes (`/api/pairs`, invite, accept, settings) and the `/pairs`
+page in the React app are the company home screen. Every read and write
+is scoped to the signed-in approver's company inside the SQL, so a wrong
+pair id changes zero rows. An approver with no pair of their own is the
+company's pair admin and sees all of its pairs; one with a pair sees that
+pair. The one switch on a pair today decides whether status replies are
+sent or drafted. Money-moving replies are never sent by the agent.
+
 ### MCP server (`src/mcp_server/`)
 
 Exposes the grounded discount check as a tool an outside agent could call.

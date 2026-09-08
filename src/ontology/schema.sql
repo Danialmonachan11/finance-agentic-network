@@ -36,6 +36,8 @@ CREATE TABLE pair (
     invited_by_company_id  UUID NOT NULL REFERENCES company(id),
     created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
     accepted_at            TIMESTAMPTZ,
+    -- R5: status-inquiry replies are drafts until a side switches this on.
+    auto_reply_status_inquiry BOOLEAN NOT NULL DEFAULT false,
     CHECK (company_a_id < company_b_id),
     UNIQUE (company_a_id, company_b_id)
 );
@@ -148,7 +150,7 @@ CREATE TABLE approver (
     display_name    TEXT NOT NULL,
     role            TEXT NOT NULL CHECK (role IN ('manager', 'cfo')),
     company_id      UUID NOT NULL REFERENCES company(id),  -- which side of the pair this person is
-    pair_id         UUID NOT NULL REFERENCES pair(id)      -- the one pair they may decide for (R8)
+    pair_id         UUID REFERENCES pair(id)               -- the one pair they may decide for (R8); NULL = pair admin for the whole company
 );
 
 -- Intake idempotency (docs/reference/architecture.md §3.2): tracks which Gmail

@@ -15,6 +15,7 @@ import { Route as AuditRouteImport } from './routes/audit'
 import { Route as ExecutedRouteImport } from './routes/executed'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PairsRouteImport } from './routes/pairs'
 import { Route as QueueRouteImport } from './routes/queue'
 import { Route as CompanyIdRouteImport } from './routes/company.$id'
 
@@ -48,6 +49,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PairsRoute = PairsRouteImport.update({
+  id: '/pairs',
+  path: '/pairs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QueueRoute = QueueRouteImport.update({
   id: '/queue',
   path: '/queue',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/executed': typeof ExecutedRoute
   '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
+  '/pairs': typeof PairsRoute
   '/queue': typeof QueueRoute
   '/company/$id': typeof CompanyIdRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/executed': typeof ExecutedRoute
   '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
+  '/pairs': typeof PairsRoute
   '/queue': typeof QueueRoute
   '/company/$id': typeof CompanyIdRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/executed': typeof ExecutedRoute
   '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
+  '/pairs': typeof PairsRoute
   '/queue': typeof QueueRoute
   '/company/$id': typeof CompanyIdRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/executed'
     | '/invoices'
     | '/login'
+    | '/pairs'
     | '/queue'
     | '/company/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/executed'
     | '/invoices'
     | '/login'
+    | '/pairs'
     | '/queue'
     | '/company/$id'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/executed'
     | '/invoices'
     | '/login'
+    | '/pairs'
     | '/queue'
     | '/company/$id'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   ExecutedRoute: typeof ExecutedRoute
   InvoicesRoute: typeof InvoicesRoute
   LoginRoute: typeof LoginRoute
+  PairsRoute: typeof PairsRoute
   QueueRoute: typeof QueueRoute
   CompanyIdRoute: typeof CompanyIdRoute
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pairs': {
+      id: '/pairs'
+      path: '/pairs'
+      fullPath: '/pairs'
+      preLoaderRoute: typeof PairsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/queue': {
       id: '/queue'
       path: '/queue'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExecutedRoute: ExecutedRoute,
   InvoicesRoute: InvoicesRoute,
   LoginRoute: LoginRoute,
+  PairsRoute: PairsRoute,
   QueueRoute: QueueRoute,
   CompanyIdRoute: CompanyIdRoute,
 }

@@ -13,7 +13,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.guardrails.audit import log_audit
-from src.ingestion.gmail_oauth import create_gmail_draft, fetch_unread_emails
+from src.api.queries import pair_settings_for_invoice
+from src.ingestion.gmail_oauth import create_gmail_draft, fetch_unread_emails, send_gmail_message
 from src.ontology.db import get_conn
 from src.orchestration.graph import run_workflow
 from src.orchestration.state import WorkflowState
@@ -32,6 +33,28 @@ def run_intake(subject: str, body: str, sender: str) -> WorkflowState | None:
         return None
     invoice_id, invoice_number = hit
     return run_workflow(invoice_id, invoice_number, email_text=body)
+
+
+def deliver_reply(final_state: WorkflowState, email: dict) -> str:
+    """Draft or send (PRD R5). Default is a draft. A status-inquiry reply is
+    sent only when the pair between the two companies is active and has the
+    switch on. Claim replies stay drafts: a human reads them before they go.
+    Returns 'sent' or 'drafted'."""
+    settings = pair_settings_for_invoice(final_state["invoice_id"])
+    may_send = (
+        final_state.get("proposal_status") == "status_answered"
+        and settings is not None
+        and settings["status"] == "active"
+        and settings["auto_reply_status_inquiry"]
+    )
+    if may_send:
+        send_gmail_message(to=email["sender"], subject=f"Re: {email['subject']}", body=final_state["draft_response"])
+        return "sent"
+    create_gmail_draft(
+        to=email["sender"], subject=f"Re: {email['subject']}",
+        body=final_state["draft_response"], thread_id=email["threadId"],
+    )
+    return "drafted"
 
 
 def _already_processed(message_id: str) -> bool:
@@ -65,14 +88,8 @@ def poll_and_process(query: str = "in:inbox -in:draft subject:INV-1002") -> list
         if final_state is None:
             continue
         results.append(final_state)
-        # Shadow mode (R5): a draft, never a send, until the pair enables replies.
         if final_state.get("proposal_status") in ("proposed", "auto_executed", "status_answered"):
-            create_gmail_draft(
-                to=email["sender"],
-                subject=f"Re: {email['subject']}",
-                body=final_state["draft_response"],
-                thread_id=email["threadId"],
-            )
+            deliver_reply(final_state, email)
         _record_processed(email["id"], final_state["workflow_id"])
     return results
 

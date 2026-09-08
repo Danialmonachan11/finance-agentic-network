@@ -46,6 +46,39 @@ export interface Approver {
   username: string;
   display_name: string;
   role: string;
+  company_id: string;
+  pair_id: string | null;
+}
+
+/** GET /api/pairs: the signed-in company's own pairs (PRD R21). */
+export interface PairContract {
+  seller: string;
+  buyer: string;
+  status: string;
+  effective_date: string;
+  expiry_date: string;
+  max_rate: number | null;
+  auto_approve_rate: number | null;
+  period_budget: number | null;
+}
+
+export interface PairApprover {
+  display_name: string;
+  role: string;
+  company: string;
+}
+
+export interface Pair {
+  id: string;
+  status: "invited" | "active";
+  accepted_at: string | null;
+  auto_reply_status_inquiry: boolean;
+  invited_by: string;
+  invited_by_me: boolean;
+  counterparty_id: string;
+  counterparty: string;
+  contracts: PairContract[];
+  approvers: PairApprover[];
 }
 
 export interface NetworkCost {
@@ -119,6 +152,19 @@ export const getExecuted = () => apiFetch<ExecutedRow[]>("/api/executed");
 export const getAudit = () => apiFetch<AuditResponse>("/api/audit");
 export const getAutomation = () => apiFetch<AutomationResponse>("/api/automation?days=30");
 export const getMe = () => apiFetch<Approver | null>("/api/me");
+export const getPairs = () => apiFetch<Pair[]>("/api/pairs");
+export const invitePair = (counterparty_company_id: string) =>
+  apiFetch<{ ok: boolean; pair_id: string }>("/api/pairs", {
+    method: "POST",
+    body: JSON.stringify({ counterparty_company_id }),
+  });
+export const acceptPair = (id: string) =>
+  apiFetch<{ ok: boolean }>(`/api/pairs/${id}/accept`, { method: "POST" });
+export const setPairAutoReply = (id: string, enabled: boolean) =>
+  apiFetch<{ ok: boolean }>(`/api/pairs/${id}/settings`, {
+    method: "POST",
+    body: JSON.stringify({ auto_reply_status_inquiry: enabled }),
+  });
 
 // --- Mutations (Phase 2 backend routes, wired here in Phase 5) -----------
 

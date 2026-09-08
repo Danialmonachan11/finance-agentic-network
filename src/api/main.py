@@ -62,6 +62,10 @@ from src.api.queries import (
     list_invoices_where_buyer,
     list_pending_proposals,
     list_pending_proposals_for_seller,
+    list_pairs_for_company,
+    invite_pair,
+    accept_pair,
+    set_pair_auto_reply,
     list_recent_workflows,
     mark_invoice_emailed,
     model_usage_summary,
@@ -645,6 +649,56 @@ def api_company_generate_invoice(request: Request, company_id: str, body: Invoic
         "ok": True, "invoice_number": invoice_number, "buyer_name": buyer["name"],
         "amount": amount, "sent_to": sender_email,
     }
+
+
+# --- Pairs (PRD 2a, R19..R21) ------------------------------------------------
+# Everything here is scoped to the signed-in approver's company. The SQL
+# guards repeat the check, so a wrong pair id changes nothing.
+
+class InviteBody(BaseModel):
+    counterparty_company_id: str
+
+
+class PairSettingsBody(BaseModel):
+    auto_reply_status_inquiry: bool
+
+
+def _require_approver(request: Request) -> dict:
+    approver = current_approver(request)
+    if approver is None:
+        raise HTTPException(401, "not signed in")
+    return approver
+
+
+@app.get("/api/pairs")
+def api_pairs(request: Request):
+    approver = _require_approver(request)
+    return list_pairs_for_company(approver["company_id"])
+
+
+@app.post("/api/pairs")
+def api_invite_pair(request: Request, body: InviteBody):
+    approver = _require_approver(request)
+    pair_id = invite_pair(approver["company_id"], body.counterparty_company_id)
+    if pair_id is None:
+        raise HTTPException(409, "A pair with that company already exists, or it is your own company.")
+    return {"ok": True, "pair_id": pair_id}
+
+
+@app.post("/api/pairs/{pair_id}/accept")
+def api_accept_pair(request: Request, pair_id: str):
+    approver = _require_approver(request)
+    if not accept_pair(pair_id, approver["company_id"]):
+        raise HTTPException(409, "Nothing to accept: not an open invite to your company, or you sent it.")
+    return {"ok": True}
+
+
+@app.post("/api/pairs/{pair_id}/settings")
+def api_pair_settings(request: Request, pair_id: str, body: PairSettingsBody):
+    approver = _require_approver(request)
+    if not set_pair_auto_reply(pair_id, approver["company_id"], body.auto_reply_status_inquiry):
+        raise HTTPException(409, "Pair is not active or is not yours.")
+    return {"ok": True}
 
 
 @app.post("/api/login")

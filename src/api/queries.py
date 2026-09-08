@@ -481,3 +481,118 @@ def list_all_invoices(pdf_stems: set[str] | None = None) -> list[dict]:
             for row in rows:
                 row["has_pdf"] = row["invoice_number"] in pdf_stems
         return rows
+
+
+# --- Pairs (PRD 2a, R19..R21) -------------------------------------------------
+# A pair is one A-to-B relationship. These are the only reads and writes on
+# the pair table. Every write is guarded by "the caller's company is on this
+# pair", inside the SQL, so a wrong company id changes zero rows.
+
+def list_pairs_for_company(company_id: str) -> list[dict]:
+    """The company home screen (R21): its own pairs, each with counterparty,
+    status, who invited, the contracts between the two, approvers per side,
+    and the pair's switches. Nothing about any other company's pairs."""
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.id, p.status, p.accepted_at, p.auto_reply_status_inquiry,
+                   inv.name AS invited_by, (p.invited_by_company_id = %s) AS invited_by_me,
+                   o.id AS counterparty_id, o.name AS counterparty
+            FROM pair p
+            JOIN company inv ON inv.id = p.invited_by_company_id
+            JOIN company o ON o.id = CASE WHEN p.company_a_id = %s THEN p.company_b_id ELSE p.company_a_id END
+            WHERE %s IN (p.company_a_id, p.company_b_id)
+            ORDER BY p.created_at
+            """,
+            (company_id, company_id, company_id),
+        )
+        cols = [c.name for c in cur.description]
+        pairs = [dict(zip(cols, row)) for row in cur.fetchall()]
+        for pair in pairs:
+            cur.execute(
+                """
+                SELECT s.name AS seller, b.name AS buyer, ct.status, ct.effective_date, ct.expiry_date,
+                       dp.max_rate, dp.auto_approve_rate, dp.period_budget
+                FROM contract ct
+                JOIN company s ON s.id = ct.seller_company_id
+                JOIN company b ON b.id = ct.buyer_company_id
+                LEFT JOIN discount_policy dp ON dp.contract_id = ct.id
+                WHERE (ct.seller_company_id, ct.buyer_company_id) IN ((%s, %s), (%s, %s))
+                ORDER BY ct.effective_date DESC
+                """,
+                (company_id, pair["counterparty_id"], pair["counterparty_id"], company_id),
+            )
+            ccols = [c.name for c in cur.description]
+            pair["contracts"] = [dict(zip(ccols, r)) for r in cur.fetchall()]
+            cur.execute(
+                """
+                SELECT a.display_name, a.role, c.name AS company
+                FROM approver a JOIN company c ON c.id = a.company_id
+                WHERE a.company_id IN (%s, %s) AND (a.pair_id = %s OR a.pair_id IS NULL)
+                ORDER BY c.name, a.role
+                """,
+                (company_id, pair["counterparty_id"], pair["id"]),
+            )
+            acols = [c.name for c in cur.description]
+            pair["approvers"] = [dict(zip(acols, r)) for r in cur.fetchall()]
+        return pairs
+
+
+def invite_pair(my_company_id: str, counterparty_id: str) -> str | None:
+    """A invites B (R19). Returns the pair id, or None if one already exists
+    in either direction or the two ids are the same company."""
+    if my_company_id == counterparty_id:
+        return None
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO pair (company_a_id, company_b_id, status, invited_by_company_id) "
+            "VALUES (LEAST(%s::uuid, %s::uuid), GREATEST(%s::uuid, %s::uuid), 'invited', %s) "
+            "ON CONFLICT (company_a_id, company_b_id) DO NOTHING RETURNING id",
+            (my_company_id, counterparty_id, my_company_id, counterparty_id, my_company_id),
+        )
+        row = cur.fetchone()
+        return str(row[0]) if row else None
+
+
+def accept_pair(pair_id: str, my_company_id: str) -> bool:
+    """B accepts (R19). Only the side that did not send the invite can
+    accept, and only while it is still an invite. Returns whether a row
+    changed."""
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE pair SET status = 'active', accepted_at = now() "
+            "WHERE id = %s AND status = 'invited' AND invited_by_company_id <> %s "
+            "AND %s IN (company_a_id, company_b_id)",
+            (pair_id, my_company_id, my_company_id),
+        )
+        return cur.rowcount == 1
+
+
+def set_pair_auto_reply(pair_id: str, my_company_id: str, enabled: bool) -> bool:
+    """The R5 switch. Either side of an active pair may flip it; it applies
+    to replies sent from this instance. Returns whether a row changed."""
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE pair SET auto_reply_status_inquiry = %s "
+            "WHERE id = %s AND status = 'active' AND %s IN (company_a_id, company_b_id)",
+            (enabled, pair_id, my_company_id),
+        )
+        return cur.rowcount == 1
+
+
+def pair_settings_for_invoice(invoice_id: str) -> dict | None:
+    """What the intake loop needs before replying about an invoice: is the
+    pair active, and may the reply be sent rather than drafted."""
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.status, p.auto_reply_status_inquiry
+            FROM invoice i
+            JOIN pair p ON p.company_a_id = LEAST(i.seller_company_id, i.buyer_company_id)
+                       AND p.company_b_id = GREATEST(i.seller_company_id, i.buyer_company_id)
+            WHERE i.id = %s
+            """,
+            (invoice_id,),
+        )
+        row = cur.fetchone()
+        return {"status": row[0], "auto_reply_status_inquiry": row[1]} if row else None
