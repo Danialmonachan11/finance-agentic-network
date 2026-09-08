@@ -1,6 +1,8 @@
 # PRD: Finance Agentic Network
 
-Status: draft v0.1, 2026-09-07. Owner: Danial.
+Status: draft v0.2, 2026-09-08 (v0.1 2026-09-07). Owner: Danial.
+v0.2 changes the unit of deployment from a company to a pair of
+companies. See section 2a and the BRAIN.md entry of 2026-09-08.
 Inputs: `docs/market/ap-ar-primer.md`, `docs/market/pain-points-network.md`,
 the design method in `docs/reference/ai-system-design-interviews-live-session.pdf`.
 Every requirement below names the pain or the lever that licenses it. If a
@@ -30,21 +32,45 @@ the answer or the evidence sits with the counterparty.
 
 ## 2. Product in one sentence
 
-An agent that sits on a company's finance mailbox and ERP, answers and
-raises the three cross-company questions on the company's behalf, and
-talks to the counterparty's agent directly when one exists, falling back
-to email when it does not.
+A pairing between two companies, A and B, in which each side's agent
+sits on that side's finance mailbox and ERP, answers and raises the three
+cross-company questions about A-to-B business only, and talks to the
+other side's agent directly once the pair is set up, falling back to
+email until then.
+
+## 2a. The relationship model
+
+The unit of deployment is a pair, not a company and not a network.
+
+- A to B is one setup: its own contract, policy, approvers on each side,
+  channel, identity and signing keys for both ends, caps, and audit trail.
+- A to C is a separate setup. Nothing from A to B is visible inside it.
+- A company runs several pairs side by side and sees a home screen listing
+  its own pairs with a status each. There is no view across companies.
+- Design target is two instances, one per company, talking over the wire.
+  The demo is one instance hosting both sides of one pair, labelled so.
+- Pairing is invite and accept. A invites B; both agree contract and
+  policy. While the invite is pending, A's agent runs in email-only mode
+  against B's mailbox.
+
+Why: this is how AP and AR teams think ("our thing with Acme"), it makes
+approver scoping the data model rather than a rule, and it sells one pair
+at a time so there is no cold-start network to bootstrap.
 
 ## 3. Users
 
 - **Primary: AP or AR analyst at a mid-market company** (roughly 500 to
-  5,000 invoices a month). Wants the inbox to shrink. Judges the product
-  by exceptions cleared per day without them.
-- **Approver: finance manager or controller.** Sees only the contested
-  middle. Judges the product by whether anything wrong ever reached
-  execution.
-- **Counterparty's agent.** Not a person. Needs a protocol, an identity,
-  and a reason to trust ours.
+  5,000 invoices a month). Works inside one pair at a time. Wants the
+  inbox for that counterparty to shrink. Judges the product by exceptions
+  cleared per day without them.
+- **Approver: finance manager or controller on one side of a pair.** Sees
+  only that pair's contested middle. Judges the product by whether
+  anything wrong ever reached execution.
+- **Pair admin.** Sends or accepts the invite, agrees the contract and
+  policy, names the approvers for their side.
+- **The other side's agent.** Not a person. The same product running for
+  the counterparty. Needs a protocol, an identity, and a reason to trust
+  ours.
 
 ## 4. Goals and non-goals
 
@@ -119,9 +145,9 @@ lever (L-risk, L-fresh, L-cost).
 - R7. Route by outcome: within policy and low risk executes at the tier
   the policy names; outside policy is declined with the reason; the
   contested middle goes to an approver with the evidence attached. (P2)
-- R8. Approvers act only on proposals for their own company, at or above
-  the required role rank. Approver identity comes from the session, never
-  from message text. (L-risk)
+- R8. Approvers belong to one side of one pair and act only on that
+  pair's proposals, at or above the required role rank. Approver identity
+  comes from the session, never from message text. (L-risk, 2a)
 - R9. Execution re-derives eligibility for the exact proposal being
   approved, and is idempotent. (L-risk)
 
@@ -137,8 +163,20 @@ lever (L-risk, L-fresh, L-cost).
 - R13. Every outbound cross-company message is also emitted in a
   structured form. If the counterparty's agent is reachable, deliver the
   structured form; else send the email. (Goal 4)
-- R14. Counterparty identity is a registry keyed on VAT ID or Peppol ID,
-  with a signing key. Unknown identity means email-only mode. (P3)
+- R14. Each side of a pair has an identity (VAT ID or Peppol ID) and a
+  signing key, exchanged at pairing. No pair means email-only mode. (P3)
+
+**Pairing (2a)**
+- R19. A company creates a pair by inviting a counterparty. The pair is
+  live only when both sides accept the same contract and policy. Until
+  then the inviting side runs email-only against the counterparty's
+  mailbox. (2a)
+- R20. Every configurable thing lives on the pair: contract, policy,
+  approvers per side, channel, caps, autonomous-reply switches. Nothing
+  is global to a company except its own identity and its list of pairs.
+  (2a, L-risk)
+- R21. A company's home screen lists its own pairs with a status each.
+  No screen shows another company's pairs. (2a)
 
 **Guardrails**
 - R15. Every step writes an audit row. Every LLM call writes a cost row.
@@ -193,16 +231,25 @@ One line per box. Add to this, never edit history.
 | Bank changes never autonomous | P3: $123k per incident, verification is the whole product |
 | Postgres checkpoint and event log, no message broker | Envelope: 100 messages a day per company |
 | Approvers scoped to a company | Network model: no fixed "us", segregation of duties is per entity |
+| Unit of deployment is a pair of companies, not a company or a network | 2026-09-08: matches how AP/AR teams work, scoping becomes the data model, sells one pair at a time |
+| Design for two instances, demo as one instance hosting both sides | Two instances is the real product; one instance is what a demo can show this month |
+| Pairing is invite and accept, email-only until accepted | Never require both sides on day one |
+| Company home screen lists own pairs only | No bird's-eye view; nothing leaks across pairs |
 
 ## 12. Open questions
 
 1. Identity registry. Self-hosted, or piggyback on Peppol participant IDs?
-   Decides R12 and R14.
+   Decides R12 and R14. Smaller now: keys are exchanged at pairing, so the
+   registry only has to answer "is this the B I paired with", not "who is
+   this stranger".
 2. ERP boundary. Which ERP first? NetSuite and Dynamics BC are the
    mid-market defaults. Read-only adapter is the integration tax.
 3. Who pays first, buyer or seller? Status inquiry is a buyer-side cost,
    disputes are a seller-side cost. Pick one to sell to.
-4. What of the current codebase survives? The discount workflow, policy
+4. Wire protocol between two instances. Signed JSON over HTTPS is the
+   obvious answer; the open part is the message schema and replay
+   protection. Decides R12, R13, R19.
+5. What of the current codebase survives? The discount workflow, policy
    gate, execution tool, audit and cost tables, and event log map onto
    R6 to R9 and R15. The Jinja UI and the Scribo invoice generator do not
    map to any requirement.
@@ -216,7 +263,8 @@ One line per box. Add to this, never edit history.
 | R3 human queue for unresolved | Missing: returns None |
 | R4, R5 status inquiry | Missing |
 | R6, R7 claims | Present; 2026-09-07 review bugs fixed 2026-09-08, covered by `tests/test_money_path.py` |
-| R8 approver scoping | Missing: approvers are global |
+| R8 approver scoping | Missing: approvers are global, pair table does not exist yet |
+| R19 to R21 pairing | Missing entirely |
 | R9 idempotent execution | Present; revalidation now checks the executed proposal's own rate |
 | R10 to R12 bank change | Missing |
 | R13, R14 network | Missing |
