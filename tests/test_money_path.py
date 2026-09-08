@@ -184,6 +184,7 @@ class StatusInquiryPath(unittest.TestCase):
         fake_llm.invoke.return_value = mock.Mock(content="Invoice INV-1001 was received; due 2026-07-01.")
         state = {"workflow_id": "00000000-0000-0000-0000-000000000002", "invoice_id": "inv-1"}
         with mock.patch.object(nodes, "get_invoice_status", return_value=facts), \
+             mock.patch.object(nodes, "guard_llm_call"), \
              mock.patch.object(nodes, "get_llm", return_value=fake_llm), \
              mock.patch.object(nodes, "log_llm_cost"), mock.patch.object(nodes, "log_audit"), \
              mock.patch.object(nodes, "publish_event"):
