@@ -9,6 +9,7 @@ a self-contained interactive HTML, and captured once as a 1440px PNG.
 | `architecture` | architecture | One pair, two company instances, the pair in the middle (PRD v0.2) |
 | `status-inquiry` | sequence | B asks A "where is my payment" by email, answered with zero human touches |
 | `claim-lifecycle` | lifecycle | A discount claim from received to executed, declined, awaiting, or expired |
+| `bank-change` | sequence | A bank-detail change by email is refused; a signed one from B's agent still waits for A's approver |
 | `pii-dataflow` | dataflow | Which text leaves the company for the model, which stays in house |
 
 Regenerate after editing a JSON (skill installed at `~/.claude/skills/archify`):

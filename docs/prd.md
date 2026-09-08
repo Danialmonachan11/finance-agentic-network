@@ -10,7 +10,8 @@ requirement has no source, delete it.
 
 Diagrams (interactive HTML, JSON source, PNG capture) in `docs/diagrams/`:
 `architecture` (components), `status-inquiry` (sequence for P1),
-`claim-lifecycle` (states for P2), `pii-dataflow` (R18 boundary).
+`claim-lifecycle` (states for P2), `bank-change` (sequence for P3),
+`pii-dataflow` (R18 boundary).
 
 ## 1. Problem
 

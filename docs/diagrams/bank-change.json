@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Bank-detail change: email is refused, a signed message still needs a human",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1050,
+      580
+    ],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "email",
+        "label": "By email: refused",
+        "focus": [
+          "b_email",
+          "mailbox",
+          "gateway",
+          "pair",
+          "agent"
+        ],
+        "note": "An unsigned request to change payment details is never applied. The agent opens a check with the contact A already knows."
+      },
+      {
+        "id": "signed",
+        "label": "Signed by B's agent",
+        "focus": [
+          "b_agent",
+          "gateway",
+          "pair",
+          "agent"
+        ],
+        "note": "Once paired, the change arrives signed under B's key. The signature is checked against the pair, not the message."
+      },
+      {
+        "id": "gate",
+        "label": "Always a human",
+        "focus": [
+          "agent",
+          "approver"
+        ],
+        "note": "Even a valid signed change waits for A's approver. Bank changes are the one case that is never autonomous."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "b_email",
+      "type": "external",
+      "label": "B by email",
+      "sublabel": "or an impostor"
+    },
+    {
+      "id": "mailbox",
+      "type": "external",
+      "label": "A's mailbox",
+      "sublabel": "Gmail / Outlook"
+    },
+    {
+      "id": "gateway",
+      "type": "security",
+      "label": "A's gateway",
+      "sublabel": "classify, verify"
+    },
+    {
+      "id": "pair",
+      "type": "security",
+      "label": "Pair A to B",
+      "sublabel": "B's key, contacts"
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "A's agent",
+      "sublabel": "LangGraph"
+    },
+    {
+      "id": "approver",
+      "type": "frontend",
+      "label": "A's approver",
+      "sublabel": "this pair"
+    },
+    {
+      "id": "b_agent",
+      "type": "backend",
+      "label": "B's agent",
+      "sublabel": "signed channel"
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 358,
+      "label": "Email"
+    },
+    {
+      "from": 366,
+      "to": 497,
+      "label": "Signed"
+    }
+  ],
+  "messages": [
+    {
+      "from": "b_email",
+      "to": "mailbox",
+      "y": 176,
+      "label": "\"please pay INV-2041 to our new IBAN\"",
+      "variant": "emphasis"
+    },
+    {
+      "from": "mailbox",
+      "to": "gateway",
+      "y": 204,
+      "label": "poll, dedupe",
+      "variant": "emphasis"
+    },
+    {
+      "from": "gateway",
+      "to": "pair",
+      "y": 232,
+      "label": "bank_change: signed by B?",
+      "variant": "security"
+    },
+    {
+      "from": "pair",
+      "to": "gateway",
+      "y": 260,
+      "label": "no signature: cannot accept",
+      "variant": "return"
+    },
+    {
+      "from": "gateway",
+      "to": "agent",
+      "y": 288,
+      "label": "typed case: bank_change, unsigned",
+      "variant": "emphasis"
+    },
+    {
+      "from": "agent",
+      "to": "approver",
+      "y": 316,
+      "label": "verification task: call the contact on file",
+      "variant": "default"
+    },
+    {
+      "from": "agent",
+      "to": "mailbox",
+      "y": 344,
+      "label": "draft: changes are not accepted by email",
+      "variant": "dashed",
+      "note": "audit row: refused, reason"
+    },
+    {
+      "from": "b_agent",
+      "to": "gateway",
+      "y": 380,
+      "label": "signed bank_change {IBAN, nonce}",
+      "variant": "security"
+    },
+    {
+      "from": "gateway",
+      "to": "pair",
+      "y": 408,
+      "label": "verify signature against B's key",
+      "variant": "security"
+    },
+    {
+      "from": "pair",
+      "to": "gateway",
+      "y": 436,
+      "label": "valid, nonce unused, pair active",
+      "variant": "return"
+    },
+    {
+      "from": "gateway",
+      "to": "agent",
+      "y": 464,
+      "label": "typed case: bank_change, signed",
+      "variant": "emphasis"
+    },
+    {
+      "from": "agent",
+      "to": "approver",
+      "y": 492,
+      "label": "approve change (never autonomous)",
+      "variant": "default"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "gateway",
+      "from": 199,
+      "to": 293,
+      "type": "security"
+    },
+    {
+      "participant": "pair",
+      "from": 227,
+      "to": 265,
+      "type": "security"
+    },
+    {
+      "participant": "agent",
+      "from": 283,
+      "to": 349,
+      "type": "backend"
+    },
+    {
+      "participant": "gateway",
+      "from": 375,
+      "to": 469,
+      "type": "security"
+    },
+    {
+      "participant": "pair",
+      "from": 403,
+      "to": 441,
+      "type": "security"
+    },
+    {
+      "participant": "agent",
+      "from": 459,
+      "to": 496,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Email can ask, never change",
+      "items": [
+        "Any unsigned request to change payment details is refused by rule, whatever the text says (R10)"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Verify with who you already know",
+      "items": [
+        "The check goes to the contact stored on the pair, not the one in the message (R11)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Signed still means a human",
+      "items": [
+        "A valid signature proves it is B's agent; A's approver still decides (R12)"
+      ]
+    }
+  ]
+}
