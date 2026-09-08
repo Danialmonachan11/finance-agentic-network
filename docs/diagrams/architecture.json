@@ -2,423 +2,55 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Finance Agentic Network: target architecture (PRD v0.1)",
+    "title": "Finance Agentic Network: one pair, two instances (PRD v0.2)",
     "quality_profile": "showcase",
-    "repository": {
-      "url": "https://github.com/Danialmonachan11/finance-agentic-network",
-      "revision": "fe7ef9dce058fa75a5ed3959f09ad011cbf5ab0e"
-    },
-    "viewBox": [
-      1240,
-      640
-    ],
+    "repository": {"url": "https://github.com/Danialmonachan11/finance-agentic-network", "revision": "0f5bb5c2660118e3bf8cbcde5ada3f9be0a0e84f"},
+    "viewBox": [1240, 640],
     "views": [
-      {
-        "id": "main-path",
-        "label": "Message to decision",
-        "focus": [
-          "counterparty",
-          "mailbox",
-          "gateway",
-          "agent",
-          "policy",
-          "execution"
-        ],
-        "note": "One inbound message: classified, grounded against the system of record, decided by code."
-      },
-      {
-        "id": "human-gate",
-        "label": "The contested middle",
-        "focus": [
-          "policy",
-          "approver",
-          "execution"
-        ],
-        "note": "Only claims the policy engine cannot settle reach a person. Bank changes always do."
-      },
-      {
-        "id": "network",
-        "label": "Agent to agent",
-        "focus": [
-          "peer",
-          "registry",
-          "gateway"
-        ],
-        "note": "When the counterparty runs the product, messages arrive signed. Unknown identity means email only."
-      }
+      {"id": "one-side", "label": "Inside company A", "focus": ["a_mailbox", "a_agent", "a_exec", "a_erp", "a_approver"],
+       "note": "A's agent reads A's mailbox and ERP, decides by code, and asks A's approver only for the contested middle."},
+      {"id": "pair", "label": "The pair", "focus": ["a_agent", "pair", "b_agent", "admin"],
+       "note": "Contract, policy, keys, caps, and the signed channel all live on the pair. A to C is a different pair."},
+      {"id": "email-only", "label": "Before pairing", "focus": ["a_mailbox", "a_agent", "b_mailbox"],
+       "note": "Until B accepts the invite, A's agent answers B by plain email. Nothing autonomous crosses the line."}
     ]
   },
   "components": [
-    {
-      "id": "counterparty",
-      "type": "external",
-      "label": "Counterparty",
-      "sublabel": "AP or AR team, email",
-      "pos": [
-        40,
-        300
-      ],
-      "size": [
-        160,
-        68
-      ]
-    },
-    {
-      "id": "peer",
-      "type": "external",
-      "label": "Counterparty agent",
-      "sublabel": "Runs this product",
-      "pos": [
-        40,
-        110
-      ],
-      "size": [
-        160,
-        68
-      ]
-    },
-    {
-      "id": "mailbox",
-      "type": "external",
-      "label": "Finance mailbox",
-      "sublabel": "Gmail or Outlook",
-      "pos": [
-        240,
-        300
-      ],
-      "size": [
-        160,
-        68
-      ]
-    },
-    {
-      "id": "gateway",
-      "type": "security",
-      "label": "Intake gateway",
-      "sublabel": "Classify, redact, resolve",
-      "pos": [
-        440,
-        300
-      ],
-      "size": [
-        160,
-        68
-      ],
-      "sources": [
-        {
-          "path": "src/ingestion/gmail_intake.py",
-          "label": "today: regex only"
-        }
-      ]
-    },
-    {
-      "id": "agent",
-      "type": "backend",
-      "label": "Workflow agent",
-      "sublabel": "LangGraph, capped",
-      "pos": [
-        640,
-        300
-      ],
-      "size": [
-        160,
-        68
-      ],
-      "sources": [
-        {
-          "path": "src/orchestration/graph.py"
-        }
-      ]
-    },
-    {
-      "id": "policy",
-      "type": "security",
-      "label": "Policy engine",
-      "sublabel": "Deterministic, no LLM",
-      "pos": [
-        840,
-        300
-      ],
-      "size": [
-        160,
-        68
-      ],
-      "sources": [
-        {
-          "path": "src/tools/discount_logic.py"
-        }
-      ]
-    },
-    {
-      "id": "execution",
-      "type": "security",
-      "label": "Execution tool",
-      "sublabel": "Revalidate, idempotent",
-      "pos": [
-        1040,
-        300
-      ],
-      "size": [
-        160,
-        68
-      ],
-      "sources": [
-        {
-          "path": "src/tools/execution.py"
-        }
-      ]
-    },
-    {
-      "id": "approver",
-      "type": "frontend",
-      "label": "Approver console",
-      "sublabel": "Own company only",
-      "pos": [
-        1040,
-        110
-      ],
-      "size": [
-        160,
-        68
-      ]
-    },
-    {
-      "id": "registry",
-      "type": "security",
-      "label": "Identity registry",
-      "sublabel": "VAT / Peppol ID + key",
-      "pos": [
-        440,
-        500
-      ],
-      "size": [
-        160,
-        68
-      ]
-    },
-    {
-      "id": "llm",
-      "type": "cloud",
-      "label": "LLM provider",
-      "sublabel": "Cheap reads, strong drafts",
-      "pos": [
-        640,
-        500
-      ],
-      "size": [
-        160,
-        68
-      ]
-    },
-    {
-      "id": "erp",
-      "type": "database",
-      "label": "System of record",
-      "sublabel": "Invoices, contracts",
-      "pos": [
-        840,
-        500
-      ],
-      "size": [
-        160,
-        68
-      ]
-    },
-    {
-      "id": "audit",
-      "type": "database",
-      "label": "Audit, cost, events",
-      "sublabel": "One trace per case",
-      "pos": [
-        1040,
-        500
-      ],
-      "size": [
-        160,
-        68
-      ],
-      "sources": [
-        {
-          "path": "src/guardrails/audit.py"
-        }
-      ]
-    }
+    {"id": "a_mailbox", "type": "external", "label": "A's finance mailbox", "sublabel": "Gmail or Outlook", "pos": [40, 300], "size": [160, 68]},
+    {"id": "a_erp", "type": "database", "label": "A's system of record", "sublabel": "Invoices, contracts, audit", "pos": [40, 500], "size": [160, 68]},
+    {"id": "a_approver", "type": "frontend", "label": "A's approver console", "sublabel": "This pair only", "pos": [240, 110], "size": [160, 68]},
+    {"id": "a_agent", "type": "backend", "label": "A's agent", "sublabel": "Classify, ground, draft", "pos": [240, 300], "size": [160, 68],
+     "sources": [{"path": "src/orchestration/graph.py"}, {"path": "src/ingestion/gmail_intake.py", "label": "intake"}]},
+    {"id": "a_exec", "type": "security", "label": "A's policy + execution", "sublabel": "Code, no LLM, idempotent", "pos": [240, 500], "size": [160, 68],
+     "sources": [{"path": "src/tools/discount_logic.py"}, {"path": "src/tools/execution.py"}]},
+    {"id": "admin", "type": "frontend", "label": "Pair admins", "sublabel": "One on each side", "pos": [540, 110], "size": [160, 68]},
+    {"id": "pair", "type": "security", "label": "Pair A to B", "sublabel": "Contract, policy, keys, caps", "pos": [540, 300], "size": [160, 68]},
+    {"id": "b_approver", "type": "frontend", "label": "B's approver console", "sublabel": "This pair only", "pos": [840, 110], "size": [160, 68]},
+    {"id": "b_agent", "type": "backend", "label": "B's agent", "sublabel": "Same product, B's copy", "pos": [840, 300], "size": [160, 68]},
+    {"id": "b_exec", "type": "security", "label": "B's policy + execution", "sublabel": "Code, no LLM, idempotent", "pos": [840, 500], "size": [160, 68]},
+    {"id": "b_mailbox", "type": "external", "label": "B's finance mailbox", "sublabel": "Gmail or Outlook", "pos": [1040, 300], "size": [160, 68]},
+    {"id": "b_erp", "type": "database", "label": "B's system of record", "sublabel": "Invoices, contracts, audit", "pos": [1040, 500], "size": [160, 68]}
   ],
   "boundaries": [
-    {
-      "kind": "security-group",
-      "label": "Trust boundary: nothing past here trusts message text",
-      "wraps": [
-        "gateway",
-        "agent",
-        "policy",
-        "execution",
-        "registry",
-        "llm",
-        "erp",
-        "audit"
-      ],
-      "pad": 28
-    }
+    {"kind": "security-group", "label": "Company A: its own instance", "wraps": ["a_mailbox", "a_erp", "a_approver", "a_agent", "a_exec"], "pad": 28},
+    {"kind": "security-group", "label": "Company B: its own instance", "wraps": ["b_mailbox", "b_erp", "b_approver", "b_agent", "b_exec"], "pad": 28}
   ],
   "connections": [
-    {
-      "id": "email-in",
-      "from": "counterparty",
-      "to": "mailbox",
-      "label": "email",
-      "variant": "emphasis",
-      "labelDy": -26
-    },
-    {
-      "id": "poll",
-      "from": "mailbox",
-      "to": "gateway",
-      "label": "poll, dedupe",
-      "variant": "emphasis",
-      "labelAt": [
-        386,
-        378
-      ]
-    },
-    {
-      "id": "case",
-      "from": "gateway",
-      "to": "agent",
-      "label": "typed case",
-      "variant": "emphasis",
-      "labelAt": [
-        591,
-        378
-      ]
-    },
-    {
-      "id": "claim",
-      "from": "agent",
-      "to": "policy",
-      "label": "extracted claim",
-      "variant": "emphasis",
-      "labelDy": -26
-    },
-    {
-      "id": "auto",
-      "from": "policy",
-      "to": "execution",
-      "label": "within policy, low risk",
-      "variant": "emphasis",
-      "labelDy": -26
-    },
-    {
-      "id": "contested",
-      "from": "policy",
-      "to": "approver",
-      "label": "contested middle",
-      "fromSide": "top",
-      "toSide": "left",
-      "labelAt": [
-        928,
-        128
-      ]
-    },
-    {
-      "id": "decide",
-      "from": "approver",
-      "to": "execution",
-      "label": "approve or decline",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "labelAt": [
-        1190,
-        244
-      ]
-    },
-    {
-      "id": "a2a",
-      "from": "peer",
-      "to": "gateway",
-      "label": "signed structured message",
-      "variant": "dashed",
-      "fromSide": "right",
-      "toSide": "top",
-      "labelAt": [
-        350,
-        128
-      ]
-    },
-    {
-      "id": "verify",
-      "from": "gateway",
-      "to": "registry",
-      "label": "verify identity",
-      "variant": "security",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "labelAt": [
-        590,
-        434
-      ]
-    },
-    {
-      "id": "redacted",
-      "from": "agent",
-      "to": "llm",
-      "label": "redacted text only",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "labelAt": [
-        790,
-        434
-      ]
-    },
-    {
-      "id": "ground",
-      "from": "policy",
-      "to": "erp",
-      "label": "contract, budget, status",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "labelAt": [
-        992,
-        434
-      ]
-    },
-    {
-      "id": "trace",
-      "from": "execution",
-      "to": "audit",
-      "label": "write + audit row",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "labelAt": [
-        1190,
-        434
-      ]
-    }
+    {"id": "a_poll", "from": "a_mailbox", "to": "a_agent", "label": "poll, dedupe", "variant": "emphasis", "labelAt": [186, 378]},
+    {"id": "a_decide", "from": "a_agent", "to": "a_exec", "label": "claim to check", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [330, 434]},
+    {"id": "a_write", "from": "a_exec", "to": "a_erp", "label": "read rows, write result", "fromSide": "left", "toSide": "right", "labelAt": [100, 578]},
+    {"id": "a_gate", "from": "a_agent", "to": "a_approver", "label": "contested middle", "fromSide": "top", "toSide": "bottom", "labelAt": [330, 244]},
+    {"id": "a_signed", "from": "a_agent", "to": "pair", "label": "signed messages", "variant": "security", "labelDy": -26},
+    {"id": "b_signed", "from": "pair", "to": "b_agent", "label": "signed messages", "variant": "security", "labelDy": -26},
+    {"id": "setup", "from": "admin", "to": "pair", "label": "invite, accept, agree policy", "fromSide": "bottom", "toSide": "top", "labelAt": [630, 244]},
+    {"id": "b_gate", "from": "b_agent", "to": "b_approver", "label": "contested middle", "fromSide": "top", "toSide": "bottom", "labelAt": [930, 244]},
+    {"id": "b_decide", "from": "b_agent", "to": "b_exec", "label": "claim to check", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [930, 434]},
+    {"id": "b_poll", "from": "b_mailbox", "to": "b_agent", "label": "poll, dedupe", "variant": "emphasis", "fromSide": "left", "toSide": "right", "labelAt": [986, 378]},
+    {"id": "b_write", "from": "b_exec", "to": "b_erp", "label": "read rows, write result", "fromSide": "right", "toSide": "left", "labelAt": [1040, 578]}
   ],
   "cards": [
-    {
-      "dot": "emerald",
-      "title": "Code decides, the model reads and drafts",
-      "items": [
-        "Policy engine and execution tool never call an LLM",
-        "A wrong discount is money, so the number is never a model output"
-      ]
-    },
-    {
-      "dot": "cyan",
-      "title": "Email first, agent to agent when a peer exists",
-      "items": [
-        "Day one works against a plain mailbox",
-        "Signed messages unlock autonomous bank-detail changes"
-      ]
-    },
-    {
-      "dot": "amber",
-      "title": "Human attention goes to the contested middle",
-      "items": [
-        "Target: 30 of 100 messages reach a person",
-        "Bank-detail changes are never autonomous"
-      ]
-    }
+    {"dot": "cyan", "title": "The pair is the product", "items": ["A to B is one setup; A to C is another with its own policy, approvers, keys, and history"]},
+    {"dot": "emerald", "title": "Each side decides for itself", "items": ["Policy and execution run as code inside the company's own instance; the model only reads and drafts"]},
+    {"dot": "amber", "title": "Email until both sides accept", "items": ["Before pairing, A's agent answers B's mailbox by plain email; bank changes are never autonomous either way"]}
   ]
 }
