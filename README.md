@@ -106,8 +106,8 @@ Short version:
 
 ```bash
 docker compose up -d
-uv run alembic upgrade head                 # schema; every change is a file under migrations/
 uv sync                                     # creates .venv from uv.lock; needs uv (https://docs.astral.sh/uv/)
+uv run alembic upgrade head                 # schema; every change is a file under migrations/
 uv run python -m data.seed.seed
 python -m src.ontology.sync_graph
 uv run python -m src.orchestration.graph   # runs the full workflow against 4 seeded invoices
