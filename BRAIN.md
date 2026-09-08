@@ -562,6 +562,41 @@ scoping (R8) stops being a bolt-on and becomes the data model. PRD goes
 to v0.2; architecture and status-inquiry diagrams get redrawn as two
 mirrored halves with the pair in the middle.
 
+## Rebuild, 2026-09-07 to 2026-09-08
+
+Everything above this line describes the platform as it was built through
+2026-08-28. On 2026-09-07 the user restarted from the market instead of
+the code. What changed, in order, each with its own commit:
+
+1. Market research first: `docs/market/ap-ar-primer.md` (process, pains,
+   vendors, regulation) and `docs/market/pain-points-network.md` (which
+   pains need two companies to cooperate). Three network pains chosen:
+   status inquiry, disputes and deductions, bank-detail change fraud.
+2. `docs/prd.md` written as the rebuild target, tagged by pain and by the
+   five levers from the design-method deck. Repo trimmed to one docs tree;
+   the Lovable design kept under `docs/design/lovable/`.
+3. Diagrams in `docs/diagrams/` via Archify: architecture, status-inquiry
+   sequence, claim lifecycle, PII data flow, bank-detail change.
+4. Four money-path bugs fixed with offline tests (`tests/test_money_path.py`).
+5. Product model change (see the 2026-09-08 entry above): the unit is a
+   pair of companies. PRD v0.2, diagrams redrawn.
+6. `pair` table, pair-scoped approvers and execution, invite and accept,
+   per-pair send switch, `/pairs` home screen in the React app.
+7. Status-inquiry path in shadow mode: four intents, resolver on sender
+   company plus number or amount, reply states only the invoice row's
+   facts, draft unless the pair allows sending.
+8. Every JSON read scoped to the signed-in company; the Companies overview
+   is gone. `docs/market/day-in-the-life.md` is the reasoning.
+9. Caps before every model call and a tool allowlist with nothing in it.
+10. Decisions logged in the PRD ledger: buyer side first, Postgres as v1
+    system of record behind one read adapter, drop Neo4j and the Jinja UI,
+    design for two instances and demo as one.
+
+Working docs from here: `ROADMAP.md` is the board, `docs/builder-guide.md`
+is the map, this file stays the history. The Status table and the "How to
+run" section above predate the rebuild; the roadmap's production-readiness
+list is what replaces them.
+
 ## Honest gaps — worth naming directly
 
 Things that are built and working, but where the current implementation

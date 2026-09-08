@@ -20,11 +20,11 @@ Order inside "To do" is priority order.
    on file and records the phone check (R11). Why: today a bank change only
    escalates by name; the control that stops the fraud is the call.
 3. **Name approvers from the Pairs page.** (R20) Why: seeded only today.
-4. **Update BRAIN.md with the 2026-09-07 decisions.**
-   Why: it is the history doc and it still ends before the restart.
 
 ## Done
 
+- 2026-09-08 BRAIN.md rebuild entry: the ten steps of the restart and where
+  the working docs live now.
 - 2026-09-08 Caps and allowlist (R16, R17): `guard_llm_call` before every
   model call (calls and spend per workflow, spend per day), LangGraph step
   limit, cap hits escalate to a human with the reason; tool allowlist with
