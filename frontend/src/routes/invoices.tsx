@@ -88,15 +88,15 @@ function InvoicesPage() {
       <PageHeader
         eyebrow="Documents"
         title="Invoices"
-        description="All invoices across the network, whichever side each company is on."
+        description="Your company's invoices in both directions: what you owe suppliers and what customers owe you."
       />
 
       {invoicesQuery.isLoading ? (
-        <Panel title="All invoices">
+        <Panel title="Your invoices">
           <SkeletonRows rows={6} />
         </Panel>
       ) : invoicesQuery.isError ? (
-        <Panel title="All invoices">
+        <Panel title="Your invoices">
           <EmptyState
             title="Couldn't load this"
             body="Something went wrong fetching invoices. Try again."
@@ -108,7 +108,7 @@ function InvoicesPage() {
           />
         </Panel>
       ) : (
-        <Panel title="All invoices" description={`${invoices.length} invoice(s) across the network.`}>
+        <Panel title="Your invoices" description={`${invoices.length} invoice(s) involving your company.`}>
           <Toolbar>
             <SearchInput
               value={query}
