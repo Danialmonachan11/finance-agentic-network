@@ -335,8 +335,9 @@ def company_generate_invoice(
 
 @app.get("/ops")
 def ops_dashboard(request: Request):
+    me = _my_company(request)
     return templates.TemplateResponse(request, "dashboard.html", {
-        "workflows": list_recent_workflows(), "network_cost": get_network_cost_summary(),
+        "workflows": list_recent_workflows(me) if me else [], "network_cost": get_network_cost_summary(),
     })
 
 
@@ -347,7 +348,7 @@ def poll_gmail(request: Request):
     poll_result = f"processed {len(results)} new email(s)" if results else "nothing new"
     return templates.TemplateResponse(
         request, "dashboard.html",
-        {"workflows": list_recent_workflows(), "poll_result": poll_result, "network_cost": get_network_cost_summary()},
+        {"workflows": list_recent_workflows(me) if (me := _my_company(request)) else [], "poll_result": poll_result, "network_cost": get_network_cost_summary()},
     )
 
 
