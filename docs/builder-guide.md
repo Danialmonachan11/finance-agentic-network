@@ -195,6 +195,13 @@ Exposes the grounded discount check as a tool an outside agent could call.
 It is not on the hot path. It exists to prove the policy check can be
 offered to other agents without exposing execution.
 
+### Environment (`pyproject.toml`, `uv.lock`)
+
+Dependencies live in `pyproject.toml`; `uv.lock` pins every version. `uv
+sync` builds `.venv` from the lock, `uv run <cmd>` runs inside it, and CI
+installs with `--frozen` so it can never drift from the lock. To add a
+package: `uv add <name>`, which updates both files; commit both.
+
 ### Tests (`tests/`)
 
 `test_money_path.py` runs with no Postgres and no API key. Each test names

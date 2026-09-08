@@ -27,30 +27,30 @@ jobs:
       SESSION_SECRET_KEY: ci-dummy
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.11"
-          cache: pip
-      - run: pip install -r requirements.txt -r requirements-dev.txt
+          enable-cache: true
+      - name: Install exactly what uv.lock says
+        run: uv sync --frozen
 
       - name: Lint (syntax errors and undefined names only)
-        run: ruff check --select E9,F63,F7,F82 src tests data migrations
+        run: uv run ruff check --select E9,F63,F7,F82 src tests data migrations evals
 
       - name: Offline tests (no database, no model)
-        run: python -m unittest tests.test_money_path -v
+        run: uv run python -m unittest tests.test_money_path -v
 
       - name: Migrate an empty database
-        run: alembic upgrade head
+        run: uv run alembic upgrade head
 
       - name: Seed and run the database-backed checks
         run: |
-          python -m data.seed.seed
-          python -m src.tools.db_lookups
-          python -m src.tools.execution
-          python -m src.tools.resolver
+          uv run python -m data.seed.seed
+          uv run python -m src.tools.db_lookups
+          uv run python -m src.tools.execution
+          uv run python -m src.tools.resolver
 
       - name: App imports and routes
-        run: python -c "from src.api.main import app; print(len(app.routes), 'routes')"
+        run: uv run python -c "from src.api.main import app; print(len(app.routes), 'routes')"
 
   frontend:
     runs-on: ubuntu-latest

@@ -106,12 +106,12 @@ Short version:
 
 ```bash
 docker compose up -d
-alembic upgrade head                        # schema; every change is a file under migrations/
-python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
-python -m data.seed.seed
+uv run alembic upgrade head                 # schema; every change is a file under migrations/
+uv sync                                     # creates .venv from uv.lock; needs uv (https://docs.astral.sh/uv/)
+uv run python -m data.seed.seed
 python -m src.ontology.sync_graph
-python -m src.orchestration.graph          # runs the full workflow against 4 seeded invoices
-python -m uvicorn src.api.main:app --port 8000
+uv run python -m src.orchestration.graph   # runs the full workflow against 4 seeded invoices
+uv run uvicorn src.api.main:app --port 8000
 ```
 
 Needs `OPENROUTER_API_KEY` in `.env` (see `.env.example`). Gmail intake

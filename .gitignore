@@ -16,3 +16,4 @@ docs/design/lovable/lovable-export-2026-08-26.zip
 
 # Third-party material, local reference only
 docs/reference/ai-system-design-interviews-live-session.pdf
+.venv-locked/

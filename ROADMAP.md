@@ -23,6 +23,9 @@ Order inside "To do" is priority order.
 
 ## Done
 
+- 2026-09-08 Python environment on uv: `pyproject.toml` plus `uv.lock`,
+  CI installs with `uv sync --frozen`. Why: one command to a reproducible
+  environment on any machine, and the lock closes the pinning gap.
 - 2026-09-08 Evaluation set: 50 real-shaped messages with known intent,
   invoice, and rate in `evals/golden_set.jsonl`; `python -m evals.run`
   scores the classifier, the resolver, and the rate extractor and writes a
@@ -132,8 +135,8 @@ In order:
 1. Evaluation in CI: a manual workflow that runs `evals.run` with a real
    key and posts the scores, so a prompt change shows its number on the
    pull request.
-2. Pin dependencies: a Python lock file, and a package-lock.json for the
-   frontend (there is none today, so CI installs whatever is newest).
+2. A package-lock.json for the frontend (there is none today, so CI
+   installs whatever is newest).
 3. Worker process for mailbox polling and graph runs; Postgres queue with
    SKIP LOCKED.
 4. Structured JSON logs with workflow id; Sentry; Langfuse or OpenTelemetry
