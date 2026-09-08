@@ -26,13 +26,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from dotenv import load_dotenv
 from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.errors import GraphRecursionError
 from langgraph.graph import END, START, StateGraph
 
 load_dotenv()
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://finance:finance_dev_only@localhost:5432/finance_agentic")
 
-from src.guardrails.audit import get_audit_trail
+from src.guardrails.audit import get_audit_trail, log_audit
+from src.guardrails.caps import WORKFLOW_MAX_STEPS, CapExceeded
+from src.orchestration.events import publish_event
 from src.orchestration.nodes import (
     answer_status,
     auto_execute,
@@ -91,11 +94,22 @@ def run_workflow(invoice_id: str, invoice_number: str, email_text: str) -> Workf
         "invoice_number": invoice_number,
         "email_text": email_text,
     }
-    config = {"configurable": {"thread_id": str(workflow_id)}}
+    # recursion_limit is the step cap (PRD R16): a graph that loops past it
+    # stops with GraphRecursionError instead of running up the bill.
+    config = {"configurable": {"thread_id": str(workflow_id)}, "recursion_limit": WORKFLOW_MAX_STEPS}
 
     with PostgresSaver.from_conn_string(DATABASE_URL) as checkpointer:
         app = build_graph(checkpointer)
-        final_state = app.invoke(initial_state, config=config)
+        try:
+            final_state = app.invoke(initial_state, config=config)
+        except (CapExceeded, GraphRecursionError) as e:
+            # A cap is not an error to retry; it is a case for a human. The
+            # audit row and event make it visible; the state says why.
+            reason = f"cap exceeded: {e}"
+            log_audit(str(workflow_id), step="caps", agent="supervisor",
+                      decision="escalated_to_human", reason=reason)
+            publish_event(workflow_id, "workflow.escalated", {"invoice_number": invoice_number, "reason": reason})
+            return {**initial_state, "proposal_status": "escalated_cap", "terminal_reason": reason}
     return final_state
 
 

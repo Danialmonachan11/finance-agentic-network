@@ -274,6 +274,6 @@ One line per box. Add to this, never edit history.
 | R10 to R12 bank change | Partial: classified and escalated, never applied (R10). Verification task and signed path missing |
 | R13, R14 network | Missing |
 | R15 audit and cost | Present |
-| R16 caps | Missing |
-| R17 allowlist | Missing |
+| R16 caps | Present: calls and spend per workflow, spend per day, step limit; exceeding escalates with the reason. Values in `src/guardrails/caps.py`, overridable by env |
+| R17 allowlist | Present as structure: `src/guardrails/tool_allowlist.py`, every model-backed agent's list is empty, and a test fails if any node binds a tool |
 | R18 PII redaction | Present, regex only |

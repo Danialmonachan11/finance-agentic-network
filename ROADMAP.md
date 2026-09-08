@@ -12,13 +12,24 @@ Order inside "To do" is priority order.
 
 ## To do
 
-1. **Remaining guardrail gaps.** Per-workflow caps (R16), per-agent tool
-   allowlist (R17). Why: turns "happens to be safe" into "cannot be unsafe".
-2. **Update BRAIN.md with the 2026-09-07 decisions.**
+1. **Seller-side chase.** Kessler's own "where is my payment" going out to
+   Nordwind, by email now and agent-to-agent once both sides run the
+   product. Why: `day-in-the-life.md`, 16:00; the first place the network
+   pays off.
+2. **Bank-change verification task.** A queue item that names the contact
+   on file and records the phone check (R11). Why: today a bank change only
+   escalates by name; the control that stops the fraud is the call.
+3. **Name approvers from the Pairs page.** (R20) Why: seeded only today.
+4. **Update BRAIN.md with the 2026-09-07 decisions.**
    Why: it is the history doc and it still ends before the restart.
 
 ## Done
 
+- 2026-09-08 Caps and allowlist (R16, R17): `guard_llm_call` before every
+  model call (calls and spend per workflow, spend per day), LangGraph step
+  limit, cap hits escalate to a human with the reason; tool allowlist with
+  every model-backed agent empty and a test that fails if a tool is ever
+  bound. Why: only capability limits stop a runaway or a tricked agent.
 - 2026-09-08 Every screen is the signed-in company's view: companies are
   me plus my counterparties with counts relative to me, invoices are mine
   with a payable/receivable direction, executed, audit, agent activity, and
@@ -115,9 +126,8 @@ In order:
    SKIP LOCKED.
 5. Structured JSON logs with workflow id; Sentry; Langfuse or OpenTelemetry
    for LLM traces.
-6. Rate limits on login and intake; daily LLM spend kill switch (R16).
-7. Per-agent tool allowlist (R17).
-8. Demo mode flags: seeded data, no real mailbox, drafts only, reset button,
+6. Rate limits on login and intake.
+7. Demo mode flags: seeded data, no real mailbox, drafts only, reset button,
    hard daily budget.
-9. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
+8. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
    Vercel or Cloudflare Pages.

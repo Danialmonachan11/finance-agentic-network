@@ -126,8 +126,12 @@ later, so the two can never disagree.
 ### Guardrails (`src/guardrails/`)
 
 `audit.py` writes the immutable trace. `cost_tracker.py` prices every model
-call. `policy_gate.py` holds the role rank check and the revalidation entry
-point. `pii_redaction.py` is the regex redactor. `injection_tests.py` feeds
+call. `caps.py` is checked before every model call: calls and spend per
+workflow, spend per day; over the line raises and the graph escalates to a
+human with the reason. `tool_allowlist.py` says which tools each
+model-backed agent may be given, and today that is none. `policy_gate.py`
+holds the role rank check and the revalidation entry point.
+`pii_redaction.py` is the regex redactor. `injection_tests.py` feeds
 hostile emails through the graph and asserts nothing executes.
 
 Why these are a folder of their own: they are the parts that must hold

@@ -225,5 +225,57 @@ class ReplyDeliveryGate(unittest.TestCase):
             self.assertEqual(self._deliver(status, settings), ("drafted", False, True), (status, settings))
 
 
+class WorkflowCaps(unittest.TestCase):
+    """Why: a runaway loop does not fail, it keeps calling the model (R16).
+    The cap is checked in code before every call and raises; the graph
+    turns that into a human escalation. Numbers come from the cost table
+    every call already writes to."""
+
+    def _guard(self, calls, spend, today):
+        from src.guardrails import caps
+        cur = FakeCursor(rows=[(calls, spend, today)])
+        with mock.patch.object(caps, "get_conn", fake_get_conn(cur)):
+            caps.guard_llm_call("wf-1", "extract_claim")
+
+    def test_under_every_cap_passes(self):
+        self._guard(2, 0.01, 0.5)
+
+    def test_each_cap_raises_with_its_name(self):
+        from src.guardrails import caps
+        for args, name in (((caps.WORKFLOW_MAX_LLM_CALLS, 0.0, 0.0), "llm_calls"),
+                           ((0, caps.WORKFLOW_MAX_SPEND_USD, 0.0), "workflow_spend_usd"),
+                           ((0, 0.0, caps.DAILY_MAX_SPEND_USD), "daily_spend_usd")):
+            with self.assertRaises(caps.CapExceeded) as ctx:
+                self._guard(*args)
+            self.assertEqual(ctx.exception.cap, name)
+
+    def test_every_model_call_in_the_graph_is_guarded(self):
+        import re
+        src = Path("src/orchestration/nodes.py").read_text(encoding="utf-8")
+        for m in re.finditer(r"^(\s+)llm = get_llm\(", src, re.M):
+            before = src[: m.start()].rstrip().splitlines()[-1]
+            self.assertIn("guard_llm_call(", before, "model call without a cap check")
+
+
+class ToolAllowlist(unittest.TestCase):
+    """Why: the only thing that stops a tricked model from moving money is
+    that it was never given the tool (R17). No node binds tools today, and
+    the allowlist for every model-backed agent is empty. Binding one later
+    must change this test on purpose."""
+
+    def test_no_tools_bound_anywhere(self):
+        hits = [p for p in Path("src").rglob("*.py") if "bind_tools(" in p.read_text(encoding="utf-8")]
+        self.assertEqual(hits, [])
+
+    def test_allowlist_is_empty_and_execution_is_never_a_tool(self):
+        from src.guardrails import tool_allowlist as ta
+        self.assertTrue(all(v == () for v in ta.TOOLS_BY_AGENT.values()))
+        self.assertIn("execute_discount", ta.NEVER_A_TOOL)
+        with self.assertRaises(ta.ToolNotAllowed):
+            ta.tools_for("response_agent", ("execute_discount",))
+        with self.assertRaises(ta.ToolNotAllowed):
+            ta.tools_for("nobody", ())
+
+
 if __name__ == "__main__":
     unittest.main()

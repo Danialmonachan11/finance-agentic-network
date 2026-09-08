@@ -23,7 +23,7 @@ class WorkflowState(TypedDict, total=False):
     risk_score: float
     risk_note: str
 
-    proposal_status: str        # 'proposed' | 'auto_executed' | 'auto_rejected' | 'status_answered' | 'escalated_no_match'
+    proposal_status: str        # 'proposed' | 'auto_executed' | 'auto_rejected' | 'status_answered' | 'escalated_no_match' | 'escalated_cap'
     draft_response: str
 
     terminal_reason: str        # set when the graph ends early (escalation, non-discount intent)

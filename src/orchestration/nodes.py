@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from pydantic import BaseModel, Field
 
 from src.guardrails.audit import log_audit
+from src.guardrails.caps import guard_llm_call
 from src.guardrails.cost_tracker import log_llm_cost
 from src.guardrails.pii_redaction import redact_pii
 from src.ontology.db import get_conn
@@ -47,6 +48,7 @@ def intake_triage(state: WorkflowState) -> dict:
     email_text is untrusted free text; redact_pii runs before it reaches
     OpenRouter (a third party) — the raw text stays in Postgres for
     internal/audit use, only what's SENT to the LLM changes (§3.10)."""
+    guard_llm_call(state["workflow_id"], "intake_triage")
     llm = get_llm("cheap").with_structured_output(IntentClassification, include_raw=True)
     raw_result = llm.invoke(
         f"Classify the intent of this finance email:\n\n{redact_pii(state['email_text'])}"
@@ -72,6 +74,7 @@ def answer_status(state: WorkflowState) -> dict:
     node writes no proposal and moves no money. Shadow mode: the reply is a
     draft, and sending is decided outside the graph by the pair's settings."""
     facts = get_invoice_status(state["invoice_id"])
+    guard_llm_call(state["workflow_id"], "answer_status")
     llm = get_llm("strong")
     response = llm.invoke(
         "Write a short, professional reply to a supplier asking about the status of an invoice. "
@@ -98,6 +101,7 @@ def answer_status(state: WorkflowState) -> dict:
 def extract_claim(state: WorkflowState) -> dict:
     """Document/claim extraction agent — cheap model, structured output.
     This is a READ of the claim, not a decision — see module docstring."""
+    guard_llm_call(state["workflow_id"], "extract_claim")
     llm = get_llm("cheap").with_structured_output(ClaimExtraction, include_raw=True)
     raw_result = llm.invoke(
         f"Extract the claimed discount rate from this email:\n\n{redact_pii(state['email_text'])}"
@@ -212,6 +216,7 @@ def risk_score(state: WorkflowState) -> dict:
     except Exception as e:
         cycle_note = f" (cycle check unavailable: {e})"
 
+    guard_llm_call(state["workflow_id"], "risk_score")
     llm = get_llm("strong")
     response = llm.invoke(
         f"In one short sentence, explain the risk of this discount proposal for a finance "
@@ -245,6 +250,7 @@ def auto_reject(state: WorkflowState) -> dict:
     cases to a human; this sends obviously-bad-but-technically-eligible ones
     straight to a decline, so a human only ever sees the genuinely
     borderline middle."""
+    guard_llm_call(state["workflow_id"], "auto_reject")
     llm = get_llm("strong")
     response = llm.invoke(
         f"Write a short, professional email declining a discount request. "
@@ -288,6 +294,7 @@ def propose(state: WorkflowState) -> dict:
     already selects the latest row per invoice, so this just makes that
     query meaningful for a genuinely new invoice instead of only working by
     coincidence with seed data."""
+    guard_llm_call(state["workflow_id"], "propose")
     llm = get_llm("strong")
     response = llm.invoke(
         f"Write a short, professional email reply approving/proposing a discount. "
@@ -374,6 +381,7 @@ def auto_execute(state: WorkflowState) -> dict:
         })
         return {"proposal_status": "proposed", "draft_response": ""}
 
+    guard_llm_call(state["workflow_id"], "auto_execute")
     llm = get_llm("strong")
     response = llm.invoke(
         f"Write a short, professional email confirming a discount was applied automatically. "
