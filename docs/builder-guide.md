@@ -202,6 +202,16 @@ a bug that was found and why the behaviour matters. Run them with
 `python -m unittest tests.test_money_path`. The rule for new tests: the
 docstring says why, and the test must fail if the business rule changes.
 
+### Evaluation (`evals/`)
+
+`golden_set.jsonl` is fifty messages a person labelled: the intent, the
+invoice it is about, and the rate it claims. `python -m evals.run` sends
+each through the same prompt and schema the graph uses, scores the three
+reads, prints the failures with the labeller's note, and writes a results
+file. The rule: change a prompt, run this, compare with the run before.
+Misses that land on "other" are acceptable, because "other" goes to a
+human. Misses that land on an autonomous class are not.
+
 ### Continuous integration (`.github/workflows/ci.yml`)
 
 Every push runs two jobs. Backend: lint for syntax errors and undefined

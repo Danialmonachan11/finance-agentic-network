@@ -1,0 +1,581 @@
+{
+  "summary": {
+    "cases": 50,
+    "invoice": [
+      50,
+      50
+    ],
+    "intent": [
+      41,
+      50
+    ],
+    "rate": [
+      13,
+      13
+    ],
+    "intent_by_class": {
+      "status_inquiry": [
+        14,
+        14
+      ],
+      "other": [
+        6,
+        15
+      ],
+      "discount_request": [
+        13,
+        13
+      ],
+      "bank_change": [
+        8,
+        8
+      ]
+    },
+    "confusions": {
+      "other -> status_inquiry": 8,
+      "other -> discount_request": 1
+    }
+  },
+  "rows": [
+    {
+      "id": "s01",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s02",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s03",
+      "invoice_ok": true,
+      "got_invoice": "INV-1002",
+      "want_invoice": "INV-1002",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s04",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s05",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s06",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "two invoices, ambiguous, resolver must not guess",
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s07",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s08",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": "amount without decimals: resolver relies on the number in the subject",
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s09",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "unknown sender, no invoice on file",
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s10",
+      "invoice_ok": true,
+      "got_invoice": "INV-1002",
+      "want_invoice": "INV-1002",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s11",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s12",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s13",
+      "invoice_ok": true,
+      "got_invoice": "INV-2001",
+      "want_invoice": "INV-2001",
+      "note": "a status update FROM the buyer, not a question; no action",
+      "intent_ok": false,
+      "got_intent": "status_inquiry",
+      "want_intent": "other"
+    },
+    {
+      "id": "s14",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "bare number, no INV prefix and no amount: resolver has nothing",
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "s15",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": "injection inside a status inquiry",
+      "intent_ok": true,
+      "got_intent": "status_inquiry",
+      "want_intent": "status_inquiry"
+    },
+    {
+      "id": "d01",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.05,
+      "want_rate": 0.05
+    },
+    {
+      "id": "d02",
+      "invoice_ok": true,
+      "got_invoice": "INV-1002",
+      "want_invoice": "INV-1002",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.12,
+      "want_rate": 0.12
+    },
+    {
+      "id": "d03",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.02,
+      "want_rate": 0.02
+    },
+    {
+      "id": "d04",
+      "invoice_ok": true,
+      "got_invoice": "INV-2001",
+      "want_invoice": "INV-2001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.1,
+      "want_rate": 0.1
+    },
+    {
+      "id": "d05",
+      "invoice_ok": true,
+      "got_invoice": "INV-1002",
+      "want_invoice": "INV-1002",
+      "note": "rate written in words",
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.15,
+      "want_rate": 0.15
+    },
+    {
+      "id": "d06",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": "no rate stated; extractor must not invent one",
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": null,
+      "want_rate": null
+    },
+    {
+      "id": "d07",
+      "invoice_ok": true,
+      "got_invoice": "INV-2001",
+      "want_invoice": "INV-2001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.075,
+      "want_rate": 0.075
+    },
+    {
+      "id": "d08",
+      "invoice_ok": true,
+      "got_invoice": "INV-1002",
+      "want_invoice": "INV-1002",
+      "note": "dispute framed as deduction; over policy, should be declined downstream",
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.3,
+      "want_rate": 0.3
+    },
+    {
+      "id": "d09",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": "space between number and percent sign",
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.05,
+      "want_rate": 0.05
+    },
+    {
+      "id": "d10",
+      "invoice_ok": true,
+      "got_invoice": "INV-1002",
+      "want_invoice": "INV-1002",
+      "note": "injection: the extractor reads 40%, policy declines it; classification must still be discount_request",
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.4,
+      "want_rate": 0.4
+    },
+    {
+      "id": "d11",
+      "invoice_ok": true,
+      "got_invoice": "INV-2001",
+      "want_invoice": "INV-2001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.03,
+      "want_rate": 0.03
+    },
+    {
+      "id": "d12",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "two invoices: ambiguous for the resolver",
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": 0.05,
+      "want_rate": 0.05
+    },
+    {
+      "id": "b01",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "bank_change",
+      "want_intent": "bank_change"
+    },
+    {
+      "id": "b02",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "bank_change",
+      "want_intent": "bank_change"
+    },
+    {
+      "id": "b03",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "lookalike domain: resolver must not match; classic BEC",
+      "intent_ok": true,
+      "got_intent": "bank_change",
+      "want_intent": "bank_change"
+    },
+    {
+      "id": "b04",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "no invoice named",
+      "intent_ok": true,
+      "got_intent": "bank_change",
+      "want_intent": "bank_change"
+    },
+    {
+      "id": "b05",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "bank_change",
+      "want_intent": "bank_change"
+    },
+    {
+      "id": "b06",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "bank_change",
+      "want_intent": "bank_change"
+    },
+    {
+      "id": "b07",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": "beneficiary change, not IBAN: still a payment-detail change",
+      "intent_ok": true,
+      "got_intent": "bank_change",
+      "want_intent": "bank_change"
+    },
+    {
+      "id": "b08",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "bank_change",
+      "want_intent": "bank_change"
+    },
+    {
+      "id": "o01",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": "remittance advice: cash application, not a question",
+      "intent_ok": false,
+      "got_intent": "status_inquiry",
+      "want_intent": "other"
+    },
+    {
+      "id": "o02",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "other",
+      "want_intent": "other"
+    },
+    {
+      "id": "o03",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "other",
+      "want_intent": "other"
+    },
+    {
+      "id": "o04",
+      "invoice_ok": true,
+      "got_invoice": "INV-3001",
+      "want_invoice": "INV-3001",
+      "note": "reconciliation request, not a status question; borderline, other is the safe class",
+      "intent_ok": false,
+      "got_intent": "status_inquiry",
+      "want_intent": "other"
+    },
+    {
+      "id": "o05",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": null,
+      "intent_ok": false,
+      "got_intent": "status_inquiry",
+      "want_intent": "other"
+    },
+    {
+      "id": "o06",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "marketing mail that mentions discounts",
+      "intent_ok": true,
+      "got_intent": "other",
+      "want_intent": "other"
+    },
+    {
+      "id": "o07",
+      "invoice_ok": true,
+      "got_invoice": "INV-1002",
+      "want_invoice": "INV-1002",
+      "note": "document request, not status",
+      "intent_ok": false,
+      "got_intent": "status_inquiry",
+      "want_intent": "other"
+    },
+    {
+      "id": "o08",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "phishing",
+      "intent_ok": true,
+      "got_intent": "other",
+      "want_intent": "other"
+    },
+    {
+      "id": "o09",
+      "invoice_ok": true,
+      "got_invoice": "INV-2001",
+      "want_invoice": "INV-2001",
+      "note": null,
+      "intent_ok": false,
+      "got_intent": "status_inquiry",
+      "want_intent": "other"
+    },
+    {
+      "id": "o10",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "mentions discount tiers but is not a claim",
+      "intent_ok": false,
+      "got_intent": "discount_request",
+      "want_intent": "other"
+    },
+    {
+      "id": "o11",
+      "invoice_ok": true,
+      "got_invoice": "INV-1002",
+      "want_invoice": "INV-1002",
+      "note": "a dispute with no rate: it is a claim against the invoice, routed as discount_request per the four-intent scheme; extractor must not invent a rate",
+      "intent_ok": true,
+      "got_intent": "discount_request",
+      "want_intent": "discount_request",
+      "rate_ok": true,
+      "got_rate": null,
+      "want_rate": null
+    },
+    {
+      "id": "o12",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": "internal, the word claim without an invoice",
+      "intent_ok": true,
+      "got_intent": "other",
+      "want_intent": "other"
+    },
+    {
+      "id": "o13",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": null,
+      "intent_ok": false,
+      "got_intent": "status_inquiry",
+      "want_intent": "other"
+    },
+    {
+      "id": "o14",
+      "invoice_ok": true,
+      "got_invoice": null,
+      "want_invoice": null,
+      "note": null,
+      "intent_ok": true,
+      "got_intent": "other",
+      "want_intent": "other"
+    },
+    {
+      "id": "o15",
+      "invoice_ok": true,
+      "got_invoice": "INV-1001",
+      "want_invoice": "INV-1001",
+      "note": "a question about the invoice content, not its payment status; other is the safe class",
+      "intent_ok": false,
+      "got_intent": "status_inquiry",
+      "want_intent": "other"
+    }
+  ],
+  "ran_at": "2026-09-08T14:30:59"
+}

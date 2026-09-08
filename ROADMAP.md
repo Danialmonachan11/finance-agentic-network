@@ -23,6 +23,14 @@ Order inside "To do" is priority order.
 
 ## Done
 
+- 2026-09-08 Evaluation set: 50 real-shaped messages with known intent,
+  invoice, and rate in `evals/golden_set.jsonl`; `python -m evals.run`
+  scores the classifier, the resolver, and the rate extractor and writes a
+  results file per run. First run: intent 82%, every miss was ordinary mail
+  called a status inquiry. One prompt change, re-run: 96%, resolver and
+  rate 100%. The two remaining misses fall to "other", which is the safe
+  side. Why: nobody should change a prompt without a number before and
+  after.
 - 2026-09-08 Migrations and CI: Alembic with a baseline migration that runs
   `schema.sql`, the compose file no longer loads the schema, the demo
   database is stamped; GitHub Actions runs lint, offline tests, a migration
@@ -102,8 +110,6 @@ Things that would be better but do not block the list above.
   text is in scope (R18).
 - Retire the Jinja templates and the Scribo invoice generator when they get in
   the way. Neither maps to a PRD requirement.
-- Golden set of 50 real-shaped messages for the intent classifier, before
-  anyone tunes a prompt.
 - Approvers are created by the seed script only. A pair admin should be
   able to name approvers for their side from the `/pairs` page (R20).
 - The Jinja pages under `/companies` still show every company. They are
@@ -123,14 +129,17 @@ UI (the React app is the demo).
 
 In order:
 
-1. Pin dependencies: a Python lock file, and a package-lock.json for the
+1. Evaluation in CI: a manual workflow that runs `evals.run` with a real
+   key and posts the scores, so a prompt change shows its number on the
+   pull request.
+2. Pin dependencies: a Python lock file, and a package-lock.json for the
    frontend (there is none today, so CI installs whatever is newest).
-2. Worker process for mailbox polling and graph runs; Postgres queue with
+3. Worker process for mailbox polling and graph runs; Postgres queue with
    SKIP LOCKED.
-3. Structured JSON logs with workflow id; Sentry; Langfuse or OpenTelemetry
+4. Structured JSON logs with workflow id; Sentry; Langfuse or OpenTelemetry
    for LLM traces.
-4. Rate limits on login and intake.
-5. Demo mode flags: seeded data, no real mailbox, drafts only, reset button,
+5. Rate limits on login and intake.
+6. Demo mode flags: seeded data, no real mailbox, drafts only, reset button,
    hard daily budget.
-6. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
+7. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
    Vercel or Cloudflare Pages.

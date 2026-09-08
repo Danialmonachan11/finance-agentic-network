@@ -13,7 +13,7 @@ class WorkflowState(TypedDict, total=False):
     email_text: str            # the raw claim text (from Gmail in Phase 6; from seed data for now)
 
     intent: str                 # intake_triage output: 'status_inquiry' | 'discount_request' | 'bank_change' | 'other'
-    extracted_claim_rate: float  # extract_claim output — an LLM's read of the claim, NOT yet trusted
+    extracted_claim_rate: float | None  # extract_claim output — an LLM's read of the claim, NOT yet trusted; None = no rate stated
 
     eligibility_eligible: bool   # ground_decision output — the actual grounded truth
     eligibility_approved_rate: float

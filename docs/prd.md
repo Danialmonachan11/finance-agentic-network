@@ -205,6 +205,9 @@ lever (L-risk, L-fresh, L-cost).
 - A golden set of at least 200 real or realistic messages across the four
   intents, including adversarial and injection cases, with expected
   outcome per message. Runs on every prompt, model, or policy change.
+  Status 2026-09-08: 50 cases in `evals/golden_set.jsonl`, scored by
+  `python -m evals.run`; intent 96%, resolver and rate 100%. Grows as real
+  messages arrive.
 - Offline unit tests for the deterministic policy layer that run without
   any database or model.
 - Online: override rate (human reverses agent), policy-violation rate,

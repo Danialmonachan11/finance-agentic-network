@@ -253,9 +253,20 @@ class WorkflowCaps(unittest.TestCase):
     def test_every_model_call_in_the_graph_is_guarded(self):
         import re
         src = Path("src/orchestration/nodes.py").read_text(encoding="utf-8")
-        for m in re.finditer(r"^(\s+)llm = get_llm\(", src, re.M):
-            before = src[: m.start()].rstrip().splitlines()[-1]
-            self.assertIn("guard_llm_call(", before, "model call without a cap check")
+        # every node that calls a helper or a model must guard first; the two
+        # read helpers are called only from guarded nodes and from evals
+        for name in ("classify_intent(", "extract_claim_rate(", "llm = get_llm("):
+            for m in re.finditer(re.escape(name), src):
+                if src[: m.start()].rstrip().endswith("def " + name[:-1]):
+                    continue
+                if name != "llm = get_llm(" and "def " in src[m.start() - 5: m.start()]:
+                    continue
+                block = src[: m.start()]
+                fn_start = block.rfind("\ndef ")
+                fn_name = block[fn_start + 5: block.find("(", fn_start)]
+                if fn_name in ("classify_intent", "extract_claim_rate"):
+                    continue
+                self.assertIn("guard_llm_call(", block[fn_start:], f"model call in {fn_name} without a cap check")
 
 
 class ToolAllowlist(unittest.TestCase):

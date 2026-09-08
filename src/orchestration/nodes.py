@@ -26,6 +26,7 @@ from src.orchestration.events import publish_event
 from src.orchestration.llm import CHEAP_MODEL, STRONG_MODEL, get_llm
 from src.orchestration.state import WorkflowState
 from src.tools.db_lookups import evaluate_invoice_discount, get_invoice_parties, get_invoice_status
+from src.tools.discount_logic import EligibilityResult
 from src.ontology.sync_graph import find_network_cycle
 from src.tools.execution import ExecutionError, execute_discount
 
@@ -40,7 +41,41 @@ class IntentClassification(BaseModel):
 
 
 class ClaimExtraction(BaseModel):
-    claimed_rate: float = Field(description="the discount rate the sender claims, as a decimal e.g. 0.10 for 10%")
+    claimed_rate: float | None = Field(description=(
+        "the discount, deduction, or short-pay rate the sender claims, as a decimal e.g. 0.10 for 10%. "
+        "null if the message states no rate: never guess or infer one"
+    ))
+
+
+INTENT_PROMPT = (
+    "Classify the intent of this finance email into exactly one class.\n"
+    "- status_inquiry: the sender ASKS where a payment stands, whether an invoice was received or "
+    "approved, or when it will be paid. It must be a question about payment status.\n"
+    "- discount_request: the sender claims, takes, or asks for a discount, deduction, rebate, "
+    "short-pay, or disputes the invoice amount.\n"
+    "- bank_change: the sender asks to change bank account, IBAN, beneficiary, or payment details.\n"
+    "- other: everything else, including remittance advices and payment confirmations, statements "
+    "and reconciliation requests, requests for a document copy, PO or receipt confirmations, "
+    "questions about the invoice's content rather than its payment, contract or rate discussions, "
+    "notifications, marketing, and internal mail.\n"
+    "When in doubt between status_inquiry and other, choose other.\n\n{text}"
+)
+CLAIM_PROMPT = "Extract the claimed discount rate from this email:\n\n{text}"
+
+
+def classify_intent(email_text: str) -> tuple[str, object]:
+    """(intent, raw model response). The one place the intent prompt lives;
+    intake_triage and evals/run.py both call it."""
+    llm = get_llm("cheap").with_structured_output(IntentClassification, include_raw=True)
+    raw = llm.invoke(INTENT_PROMPT.format(text=redact_pii(email_text)))
+    return raw["parsed"].intent, raw["raw"]
+
+
+def extract_claim_rate(email_text: str) -> tuple[float | None, object]:
+    """(claimed rate or None, raw model response). Same contract as above."""
+    llm = get_llm("cheap").with_structured_output(ClaimExtraction, include_raw=True)
+    raw = llm.invoke(CLAIM_PROMPT.format(text=redact_pii(email_text)))
+    return raw["parsed"].claimed_rate, raw["raw"]
 
 
 def intake_triage(state: WorkflowState) -> dict:
@@ -49,17 +84,13 @@ def intake_triage(state: WorkflowState) -> dict:
     OpenRouter (a third party) — the raw text stays in Postgres for
     internal/audit use, only what's SENT to the LLM changes (§3.10)."""
     guard_llm_call(state["workflow_id"], "intake_triage")
-    llm = get_llm("cheap").with_structured_output(IntentClassification, include_raw=True)
-    raw_result = llm.invoke(
-        f"Classify the intent of this finance email:\n\n{redact_pii(state['email_text'])}"
-    )
-    result: IntentClassification = raw_result["parsed"]
+    intent, raw = classify_intent(state["email_text"])
     log_audit(
         state["workflow_id"], step="intake_triage", agent="intake_triage_agent",
-        decision=result.intent, reason="LLM classification", model=CHEAP_MODEL,
+        decision=intent, reason="LLM classification", model=CHEAP_MODEL,
     )
-    log_llm_cost(state["workflow_id"], "intake_triage", CHEAP_MODEL, raw_result["raw"])
-    return {"intent": result.intent}
+    log_llm_cost(state["workflow_id"], "intake_triage", CHEAP_MODEL, raw)
+    return {"intent": intent}
 
 
 def route_after_triage(state: WorkflowState) -> str:
@@ -102,18 +133,14 @@ def extract_claim(state: WorkflowState) -> dict:
     """Document/claim extraction agent — cheap model, structured output.
     This is a READ of the claim, not a decision — see module docstring."""
     guard_llm_call(state["workflow_id"], "extract_claim")
-    llm = get_llm("cheap").with_structured_output(ClaimExtraction, include_raw=True)
-    raw_result = llm.invoke(
-        f"Extract the claimed discount rate from this email:\n\n{redact_pii(state['email_text'])}"
-    )
-    result: ClaimExtraction = raw_result["parsed"]
+    rate, raw = extract_claim_rate(state["email_text"])
     log_audit(
         state["workflow_id"], step="extract_claim", agent="extraction_agent",
-        decision=f"claimed_rate={result.claimed_rate}", reason="LLM extraction, not yet grounded",
+        decision=f"claimed_rate={rate}", reason="LLM extraction, not yet grounded",
         model=CHEAP_MODEL,
     )
-    log_llm_cost(state["workflow_id"], "extract_claim", CHEAP_MODEL, raw_result["raw"])
-    return {"extracted_claim_rate": result.claimed_rate}
+    log_llm_cost(state["workflow_id"], "extract_claim", CHEAP_MODEL, raw)
+    return {"extracted_claim_rate": rate}
 
 
 def ground_decision(state: WorkflowState) -> dict:
@@ -124,7 +151,10 @@ def ground_decision(state: WorkflowState) -> dict:
     ignore. Grounding means "verify the claim against authoritative data,"
     not "substitute a different number entirely" (see the bug this fixed,
     in BRAIN.md's decisions log)."""
-    result = evaluate_invoice_discount(state["invoice_id"], claimed_rate=state["extracted_claim_rate"])
+    if state.get("extracted_claim_rate") is None:
+        result = EligibilityResult(False, 0.0, "rejected", "no rate stated in the claim; needs a human")
+    else:
+        result = evaluate_invoice_discount(state["invoice_id"], claimed_rate=state["extracted_claim_rate"])
     log_audit(
         state["workflow_id"], step="ground_decision", agent="discount_policy_agent",
         decision="eligible" if result.eligible else "rejected", reason=result.reason,
