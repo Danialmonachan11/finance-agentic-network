@@ -23,6 +23,12 @@ Order inside "To do" is priority order.
 
 ## Done
 
+- 2026-09-08 Migrations and CI: Alembic with a baseline migration that runs
+  `schema.sql`, the compose file no longer loads the schema, the demo
+  database is stamped; GitHub Actions runs lint, offline tests, a migration
+  of an empty Postgres, seed, and the database checks on every push, plus
+  a frontend type-check and build. Why: two hand-applied schema changes in
+  one day, and eighteen tests nobody ran automatically.
 - 2026-09-08 BRAIN.md rebuild entry: the ten steps of the restart and where
   the working docs live now.
 - 2026-09-08 Caps and allowlist (R16, R17): `guard_llm_call` before every
@@ -117,17 +123,14 @@ UI (the React app is the demo).
 
 In order:
 
-1. Alembic migrations; the seed script stops owning the schema. (The pair
-   table was applied to the demo database by hand on 2026-09-08; this is
-   the last time that should happen.)
-2. CI on GitHub Actions: unit tests, ruff, docker build, injection suite.
-3. Pin dependencies with a lock file.
-4. Worker process for mailbox polling and graph runs; Postgres queue with
+1. Pin dependencies: a Python lock file, and a package-lock.json for the
+   frontend (there is none today, so CI installs whatever is newest).
+2. Worker process for mailbox polling and graph runs; Postgres queue with
    SKIP LOCKED.
-5. Structured JSON logs with workflow id; Sentry; Langfuse or OpenTelemetry
+3. Structured JSON logs with workflow id; Sentry; Langfuse or OpenTelemetry
    for LLM traces.
-6. Rate limits on login and intake.
-7. Demo mode flags: seeded data, no real mailbox, drafts only, reset button,
+4. Rate limits on login and intake.
+5. Demo mode flags: seeded data, no real mailbox, drafts only, reset button,
    hard daily budget.
-8. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
+6. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
    Vercel or Cloudflare Pages.

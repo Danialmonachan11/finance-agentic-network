@@ -142,8 +142,11 @@ never gives it that tool.
 
 ### Ontology (`src/ontology/`)
 
-`schema.sql` is the Postgres schema. `db.py` is the one place that reads
-`DATABASE_URL`. `sync_graph.py` mirrors companies and contracts into Neo4j
+`schema.sql` is the schema as of 2026-09-08 and the baseline migration
+runs it verbatim; every change after that is a numbered file under
+`migrations/versions/`, applied with `alembic upgrade head`. Never edit
+`schema.sql` for a change; write a migration. `db.py` is the one place that
+reads `DATABASE_URL`. `sync_graph.py` mirrors companies and contracts into Neo4j
 for the trading-loop check.
 
 Why one connection helper: every query goes through it, so swapping the
@@ -198,6 +201,14 @@ offered to other agents without exposing execution.
 a bug that was found and why the behaviour matters. Run them with
 `python -m unittest tests.test_money_path`. The rule for new tests: the
 docstring says why, and the test must fail if the business rule changes.
+
+### Continuous integration (`.github/workflows/ci.yml`)
+
+Every push runs two jobs. Backend: lint for syntax errors and undefined
+names, the offline tests, then a migration of an empty Postgres, the seed,
+and the four database-backed checks. Frontend: type-check and build. No
+step calls a model. A red commit means one of those broke, and the log
+says which. There is no deploy step yet; hosting is on the roadmap.
 
 ## 4. Things we chose not to do
 

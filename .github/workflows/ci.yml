@@ -1,0 +1,67 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: finance_agentic
+          POSTGRES_USER: finance
+          POSTGRES_PASSWORD: finance_dev_only
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U finance -d finance_agentic"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://finance:finance_dev_only@localhost:5432/finance_agentic
+      # Nodes import the LLM factory, which needs a key at import time. No
+      # step here calls a model.
+      OPENROUTER_API_KEY: ci-dummy
+      SESSION_SECRET_KEY: ci-dummy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint (syntax errors and undefined names only)
+        run: ruff check --select E9,F63,F7,F82 src tests data migrations
+
+      - name: Offline tests (no database, no model)
+        run: python -m unittest tests.test_money_path -v
+
+      - name: Migrate an empty database
+        run: alembic upgrade head
+
+      - name: Seed and run the database-backed checks
+        run: |
+          python -m data.seed.seed
+          python -m src.tools.db_lookups
+          python -m src.tools.execution
+          python -m src.tools.resolver
+
+      - name: App imports and routes
+        run: python -c "from src.api.main import app; print(len(app.routes), 'routes')"
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npx tsc --noEmit -p tsconfig.json
+      - run: npx vite build

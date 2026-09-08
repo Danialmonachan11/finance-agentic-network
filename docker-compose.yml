@@ -9,7 +9,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./src/ontology/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      # Schema is applied by `alembic upgrade head`, not by the container.
 
   neo4j:
     image: neo4j:5-community

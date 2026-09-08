@@ -106,6 +106,7 @@ Short version:
 
 ```bash
 docker compose up -d
+alembic upgrade head                        # schema; every change is a file under migrations/
 python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
 python -m data.seed.seed
 python -m src.ontology.sync_graph
