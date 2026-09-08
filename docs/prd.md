@@ -264,8 +264,9 @@ One line per box. Add to this, never edit history.
 | R3 human queue for unresolved | Missing: returns None |
 | R4, R5 status inquiry | Missing |
 | R6, R7 claims | Present; 2026-09-07 review bugs fixed 2026-09-08, covered by `tests/test_money_path.py` |
-| R8 approver scoping | Missing: approvers are global, pair table does not exist yet |
-| R19 to R21 pairing | Missing entirely |
+| R8 approver scoping | Present: approvers carry company and pair; execution and decline refuse other companies |
+| R19 pairing | Partial: `pair` table with invited/active status, execution requires active; no invite flow yet |
+| R20, R21 pair config and home screen | Missing |
 | R9 idempotent execution | Present; revalidation now checks the executed proposal's own rate |
 | R10 to R12 bank change | Missing |
 | R13, R14 network | Missing |

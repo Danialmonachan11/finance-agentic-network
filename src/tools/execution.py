@@ -22,7 +22,7 @@ class ExecutionError(Exception):
     pass
 
 
-def execute_discount(proposal_id: str, approver_name: str, approver_role: str) -> dict:
+def execute_discount(proposal_id: str, approver_name: str, approver_role: str, approver_company_id: str) -> dict:
     """Takes the SPECIFIC proposal being approved, not an invoice_id — this
     used to look up 'whatever the latest proposal for this invoice is
     right now', which meant an approve click could silently target a
@@ -35,13 +35,17 @@ def execute_discount(proposal_id: str, approver_name: str, approver_role: str) -
 
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT invoice_id, status, claimed_rate FROM discount_proposal WHERE id = %s",
+            "SELECT dp.invoice_id, dp.status, dp.claimed_rate, i.seller_company_id, "
+            "  (SELECT p.status FROM pair p "
+            "   WHERE p.company_a_id = LEAST(i.seller_company_id, i.buyer_company_id) "
+            "     AND p.company_b_id = GREATEST(i.seller_company_id, i.buyer_company_id)) "
+            "FROM discount_proposal dp JOIN invoice i ON i.id = dp.invoice_id WHERE dp.id = %s",
             (proposal_id,),
         )
         row = cur.fetchone()
         if row is None:
             raise ExecutionError(f"no such discount_proposal: {proposal_id}")
-        invoice_id, status, claimed_rate = str(row[0]), row[1], row[2]
+        invoice_id, status, claimed_rate, seller_company_id, pair_status = str(row[0]), row[1], row[2], str(row[3]), row[4]
 
         if status == "executed":
             log_audit(workflow_id, step="execute_discount", agent="execution_tool",
@@ -50,6 +54,18 @@ def execute_discount(proposal_id: str, approver_name: str, approver_role: str) -
 
         if status != "proposed":
             raise ExecutionError(f"proposal {proposal_id} is in status '{status}', not 'proposed' — cannot execute")
+
+    # The pair is the trust boundary (PRD 2a, R8, R19): a discount is the
+    # seller's money, so only the seller's own approver may release it, and
+    # only inside an active pair with this buyer.
+    if str(approver_company_id) != seller_company_id:
+        log_audit(workflow_id, step="execute_discount", agent="execution_tool",
+                   decision="blocked", reason="approver is not on the seller side of this invoice")
+        raise ExecutionError("cannot execute: approver belongs to a different company than the invoice's seller")
+    if pair_status != "active":
+        log_audit(workflow_id, step="execute_discount", agent="execution_tool",
+                   decision="blocked", reason=f"pair status is {pair_status!r}, not active")
+        raise ExecutionError("cannot execute: no active pair between seller and buyer")
 
     # Re-derive from Postgres now — never trust the proposal row's own
     # approval_level/status as sufficient, even though it was set correctly
@@ -115,10 +131,10 @@ def demo() -> None:
     from src.ontology.db import get_conn as _get_conn
 
     with _get_conn() as conn, conn.cursor() as cur:
-        cur.execute("SELECT id FROM invoice WHERE invoice_number = 'INV-1002'")
-        inv1002_id = str(cur.fetchone()[0])
-        cur.execute("SELECT id FROM invoice WHERE invoice_number = 'INV-3001'")
-        inv3001_id = str(cur.fetchone()[0])
+        cur.execute("SELECT id, seller_company_id FROM invoice WHERE invoice_number = 'INV-1002'")
+        inv1002_id, seller1002 = (str(v) for v in cur.fetchone())
+        cur.execute("SELECT id, seller_company_id FROM invoice WHERE invoice_number = 'INV-3001'")
+        inv3001_id, seller3001 = (str(v) for v in cur.fetchone())
         # reset any prior demo run's state so this is repeatable, and grab
         # THE specific proposal_id each check operates on — execute_discount
         # takes a proposal_id now, not an invoice_id (see its docstring).
@@ -132,18 +148,18 @@ def demo() -> None:
 
     # 1. Insufficient authority: a manager-level discount, approver is only 'auto' rank -> blocked
     try:
-        execute_discount(inv1002_proposal_id, approver_name="Alex", approver_role="auto")
+        execute_discount(inv1002_proposal_id, approver_name="Alex", approver_role="auto", approver_company_id=seller1002)
         raise AssertionError("expected ExecutionError for insufficient approver role")
     except ExecutionError as e:
         print(f"  [expected] blocked insufficient authority: {e}")
 
     # 2. Sufficient authority -> executes
-    result = execute_discount(inv1002_proposal_id, approver_name="Jordan (Manager)", approver_role="manager")
+    result = execute_discount(inv1002_proposal_id, approver_name="Jordan (Manager)", approver_role="manager", approver_company_id=seller1002)
     assert result["status"] == "executed" and not result["already_executed"], result
     print(f"  executed: {result}")
 
     # 3. Idempotency: re-executing the same proposal is a safe no-op, not a double-apply
-    result2 = execute_discount(inv1002_proposal_id, approver_name="Jordan (Manager)", approver_role="manager")
+    result2 = execute_discount(inv1002_proposal_id, approver_name="Jordan (Manager)", approver_role="manager", approver_company_id=seller1002)
     assert result2["already_executed"] is True, result2
     print(f"  re-execute is a no-op: {result2}")
 
@@ -151,7 +167,7 @@ def demo() -> None:
     #    contract is expired (INV-3001) still gets blocked — because execute_discount
     #    re-derives eligibility itself rather than trusting any prior state.
     try:
-        execute_discount(inv3001_proposal_id, approver_name="Jordan (Manager)", approver_role="cfo")
+        execute_discount(inv3001_proposal_id, approver_name="Jordan (Manager)", approver_role="cfo", approver_company_id=seller3001)
         raise AssertionError("expected ExecutionError for expired contract, regardless of approver authority")
     except ExecutionError as e:
         print(f"  [expected] blocked on revalidation despite full authority: {e}")

@@ -70,7 +70,9 @@ discount on INV-2041." Here is what touches it, in order, and why.
    row with an atomic conditional update. Why re-derive: the proposal might
    be hours old and the contract might have changed. Why the exact
    proposal: an approver decided on one row, not "whatever is newest". Why
-   atomic: two approvers clicking at once must not both succeed.
+   atomic: two approvers clicking at once must not both succeed. It also
+   refuses an approver who is not on the seller's side of the invoice, and
+   any invoice whose two companies do not have an active pair.
 
 Every step writes to `audit_log` with the same `workflow_id`, and every
 model call writes to `llm_call_cost`. One id, one trace, one cost line.
@@ -175,9 +177,10 @@ docstring says why, and the test must fail if the business rule changes.
 - **No message broker.** See orchestration above. Add one when the
   envelope is a hundred times larger.
 - **No agent-decided numbers.** See section 1.
-- **No global approvers.** Approvers belong to one side of one pair. This
-  is not built yet (roadmap item 5), and until it is, the approver table is
-  the biggest known gap.
+- **No global approvers.** Approvers belong to one side of one pair. Since
+  2026-09-08 the `approver` row carries a company and a pair, and
+  `execute_discount` refuses an approver from any other company or a pair
+  that is not active. The invite flow that creates pairs is not built yet.
 - **Neo4j, being removed.** It answers one question, "is the seller in a
   trading loop of four hops or less", and Postgres answers that with a
   recursive query at our size. A second database is a second thing to

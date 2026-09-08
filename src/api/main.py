@@ -170,7 +170,10 @@ def narrate_trace(trace: list[dict]) -> list[dict]:
 
 
 def current_approver(request: Request) -> dict | None:
-    return request.session.get("approver")
+    approver = request.session.get("approver")
+    # Sessions from before approvers were pair-scoped carry no company; treat
+    # them as signed out so nothing runs unscoped.
+    return approver if approver and "company_id" in approver else None
 
 
 @app.get("/login")
@@ -344,12 +347,15 @@ def workflow_detail(request: Request, workflow_id: str):
 
 @app.get("/proposals")
 def proposals(request: Request, selected: str = ""):
-    proposal_list = list_pending_proposals()
+    approver = current_approver(request)
+    if approver is None:
+        return RedirectResponse(url="/login?next=/proposals", status_code=303)
+    proposal_list = list_pending_proposals(approver["company_id"])
     selected_proposal = next((p for p in proposal_list if str(p["proposal_id"]) == selected), None)
     if selected_proposal is None and proposal_list:
         selected_proposal = proposal_list[0]
     return templates.TemplateResponse(request, "proposals.html", {
-        "proposals": proposal_list, "approver": current_approver(request),
+        "proposals": proposal_list, "approver": approver,
         "selected_proposal": selected_proposal,
     })
 
@@ -361,7 +367,7 @@ def approve_proposal(request: Request, proposal_id: str, return_to: str = Form("
         return RedirectResponse(url=f"/login?next={quote(return_to)}", status_code=303)
 
     try:
-        execute_discount(proposal_id, approver_name=approver["display_name"], approver_role=approver["role"])
+        execute_discount(proposal_id, approver_name=approver["display_name"], approver_role=approver["role"], approver_company_id=approver["company_id"])
     except ExecutionError as e:
         error = friendly_execution_error(str(e))
         # Render back to wherever the approve was actually clicked from —
@@ -375,7 +381,7 @@ def approve_proposal(request: Request, proposal_id: str, return_to: str = Form("
             return templates.TemplateResponse(request, "company_detail.html", context)
         return templates.TemplateResponse(
             request, "proposals.html",
-            {"proposals": list_pending_proposals(), "approver": approver, "error": error},
+            {"proposals": list_pending_proposals(approver["company_id"]), "approver": approver, "error": error},
         )
     return RedirectResponse(url=return_to, status_code=303)
 
@@ -386,7 +392,7 @@ def decline_proposal_route(request: Request, proposal_id: str, return_to: str = 
     if approver is None:
         return RedirectResponse(url=f"/login?next={quote(return_to)}", status_code=303)
 
-    conflict_status = decline_proposal(proposal_id, approver_name=approver["display_name"])
+    conflict_status = decline_proposal(proposal_id, approver_name=approver["display_name"], approver_company_id=approver["company_id"])
     if conflict_status is not None:
         error = (
             f"no such discount_proposal: {proposal_id}" if conflict_status == "not_found"
@@ -401,7 +407,7 @@ def decline_proposal_route(request: Request, proposal_id: str, return_to: str = 
             return templates.TemplateResponse(request, "company_detail.html", context)
         return templates.TemplateResponse(
             request, "proposals.html",
-            {"proposals": list_pending_proposals(), "approver": approver, "error": error},
+            {"proposals": list_pending_proposals(approver["company_id"]), "approver": approver, "error": error},
         )
     return RedirectResponse(url=return_to, status_code=303)
 
@@ -459,12 +465,17 @@ def api_company_detail(request: Request, company_id: str):
 
 
 @app.get("/api/proposals")
-def api_proposals():
+def api_proposals(request: Request):
+    # Scoped to the signed-in approver's side of their pair (PRD R8).
+    # Signed out means an empty queue, not the network's queue.
+    approver = current_approver(request)
+    if approver is None:
+        return []
     # created_at -> requested_at: the only key renamed here, to match the
     # frontend's PendingRequest type (frontend/src/lib/fan-data.ts).
     # The underlying query/column name is untouched.
     rows = []
-    for p in list_pending_proposals():
+    for p in list_pending_proposals(approver["company_id"]):
         created_at = p.pop("created_at")
         rows.append({**p, "requested_at": created_at})
     return rows
@@ -542,7 +553,7 @@ def api_approve_proposal(request: Request, proposal_id: str):
     if approver is None:
         raise HTTPException(401, "not signed in")
     try:
-        result = execute_discount(proposal_id, approver_name=approver["display_name"], approver_role=approver["role"])
+        result = execute_discount(proposal_id, approver_name=approver["display_name"], approver_role=approver["role"], approver_company_id=approver["company_id"])
     except ExecutionError as e:
         raise HTTPException(409, friendly_execution_error(str(e)))
     return {"ok": True, **result}
@@ -553,7 +564,7 @@ def api_decline_proposal(request: Request, proposal_id: str):
     approver = current_approver(request)
     if approver is None:
         raise HTTPException(401, "not signed in")
-    conflict_status = decline_proposal(proposal_id, approver_name=approver["display_name"])
+    conflict_status = decline_proposal(proposal_id, approver_name=approver["display_name"], approver_company_id=approver["company_id"])
     if conflict_status is not None:
         if conflict_status == "not_found":
             raise HTTPException(404, f"no such discount_proposal: {proposal_id}")

@@ -197,11 +197,13 @@ def list_pending_proposals_for_seller(company_id: str) -> list[dict]:
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
-def list_pending_proposals() -> list[dict]:
-    """Network-wide pending list — used by /proposals (and the technical/ops
-    view). Carries invoice amount/due_date/contract_status and risk_score
-    too, so /proposals' master-detail panel has everything it needs without
-    a second query per selection."""
+def list_pending_proposals(seller_company_id: str | None = None) -> list[dict]:
+    """Pending list for /proposals and /api/proposals. Pass the signed-in
+    approver's company so they see only proposals their side must decide
+    (PRD R8); None is the unscoped ops view. Carries invoice
+    amount/due_date/contract_status and risk_score too, so the master-detail
+    panel has everything it needs without a second query per selection."""
+    scope = "AND i.seller_company_id = %s" if seller_company_id else ""
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(
             f"""
@@ -215,9 +217,10 @@ def list_pending_proposals() -> list[dict]:
             JOIN company s ON s.id = i.seller_company_id
             JOIN company b ON b.id = i.buyer_company_id
             LEFT JOIN contract ct ON ct.id = i.contract_id
-            WHERE dp.status = 'proposed'
+            WHERE dp.status = 'proposed' {scope}
             ORDER BY dp.created_at DESC
-            """
+            """,
+            (seller_company_id,) if seller_company_id else (),
         )
         cols = [c.name for c in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -306,7 +309,7 @@ def list_executed_proposals(limit: int = 25) -> list[dict]:
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
-def decline_proposal(proposal_id: str, approver_name: str) -> str | None:
+def decline_proposal(proposal_id: str, approver_name: str, approver_company_id: str) -> str | None:
     """Declines a pending proposal in place: sets status='rejected',
     approved_by to the signed-in approver, decided_at now. Conditioned on
     status = 'proposed', same atomic check-and-set as execute_discount's
@@ -317,8 +320,9 @@ def decline_proposal(proposal_id: str, approver_name: str) -> str | None:
         cur.execute(
             "UPDATE discount_proposal SET status = 'rejected', approved_by = %s, "
             "decided_at = now() WHERE id = %s AND status = 'proposed' "
+            "AND invoice_id IN (SELECT id FROM invoice WHERE seller_company_id = %s) "
             "RETURNING workflow_id, invoice_id",
-            (approver_name, proposal_id),
+            (approver_name, proposal_id, approver_company_id),
         )
         row = cur.fetchone()
         if row is not None:

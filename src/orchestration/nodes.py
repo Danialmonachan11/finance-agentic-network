@@ -318,10 +318,14 @@ def auto_execute(state: WorkflowState) -> dict:
              state["risk_score"], state["email_text"]),
         )
         proposal_id = str(cur.fetchone()[0])
+        # The agent acts for the seller side: a discount is the seller's money.
+        cur.execute("SELECT seller_company_id FROM invoice WHERE id = %s", (state["invoice_id"],))
+        seller_company_id = str(cur.fetchone()[0])
 
     approver_role = state["eligibility_approval_level"]
     try:
-        execute_discount(proposal_id, approver_name=f"AI Agent (auto-execute, {approver_role} tier)", approver_role=approver_role)
+        execute_discount(proposal_id, approver_name=f"AI Agent (auto-execute, {approver_role} tier)",
+                         approver_role=approver_role, approver_company_id=seller_company_id)
     except ExecutionError as e:
         log_audit(
             state["workflow_id"], step="auto_execute", agent="execution_agent",

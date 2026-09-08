@@ -16,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from src.api.auth import seed_approvers
 from src.ontology.db import get_conn
 from src.tools.discount_logic import Contract, DiscountPolicy, check_eligibility
 
@@ -47,7 +48,7 @@ INVOICES = [
 
 def seed() -> None:
     with get_conn() as conn, conn.cursor() as cur:
-        cur.execute("TRUNCATE audit_log, workflow_event, processed_email, discount_proposal, invoice_line, invoice, discount_policy, contract, company RESTART IDENTITY CASCADE")
+        cur.execute("TRUNCATE approver, pair, audit_log, workflow_event, processed_email, discount_proposal, invoice_line, invoice, discount_policy, contract, company RESTART IDENTITY CASCADE")
 
         company_ids = []
         for name, domain in COMPANIES:
@@ -71,6 +72,16 @@ def seed() -> None:
                 "INSERT INTO discount_policy (contract_id, max_rate, period_budget, auto_approve_rate) "
                 "VALUES (%s, %s, %s, %s)",
                 (contract_id, max_rate, budget, auto_rate),
+            )
+
+        # One active pair per contract leg. The demo skips the invite step;
+        # both sides are treated as having accepted (PRD R19).
+        for seller_idx, buyer_idx, *_ in CONTRACTS:
+            s, b = company_ids[seller_idx], company_ids[buyer_idx]
+            cur.execute(
+                "INSERT INTO pair (company_a_id, company_b_id, status, invited_by_company_id, accepted_at) "
+                "VALUES (LEAST(%s, %s), GREATEST(%s, %s), 'active', %s, now()) ON CONFLICT DO NOTHING",
+                (s, b, s, b, s),
             )
 
         for contract_idx, inv_num, amount, issued, due, claimed_rate, justification in INVOICES:
@@ -115,6 +126,7 @@ def seed() -> None:
                 (invoice_id, claimed_rate, approval_level, initial_status, justification),
             )
 
+    seed_approvers()
     print(f"seeded {len(company_ids)} companies (network: "
           f"{COMPANIES[0][0]} -> {COMPANIES[1][0]} -> {COMPANIES[2][0]} -> {COMPANIES[0][0]}), "
           f"{len(contract_ids)} contracts, {len(INVOICES)} invoices")

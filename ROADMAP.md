@@ -1,40 +1,49 @@
+# Roadmap
 
-## Production readiness
+The working board for the rebuild. One line per item, with the reason it is
+on the list. Move items between sections as they change state; do not delete
+finished ones. Requirement ids (R1..R21) refer to `docs/prd.md`.
 
-Decided 2026-09-08: the target is a public demo site and a publishable
-working setup, not a laptop prototype. The shape stays small: one web
-process, one worker process, one Postgres. No Kubernetes, no broker.
+Order inside "To do" is priority order.
 
-Keep: Python, FastAPI, LangGraph + Postgres checkpointer, Postgres 16,
-Docker, the React frontend under `frontend/`.
-Drop: Neo4j (cycle check becomes a recursive query in Postgres), the Jinja
-UI (the React app is the demo).
+## In progress
 
-In order:
+- (nothing)
 
-1. Alembic migrations; the seed script stops owning the schema.
-2. CI on GitHub Actions: unit tests, ruff, docker build, injection suite.
-3. Pin dependencies with a lock file.
-4. Worker process for mailbox polling and graph runs; Postgres queue with
-   SKIP LOCKED.
-5. Structured JSON logs with workflow id; Sentry; Langfuse or OpenTelemetry
-   for LLM traces.
-6. Rate limits on login and intake; daily LLM spend kill switch (R16).
-7. Company-scoped approvers (R8); per-agent tool allowlist (R17).
-8. Demo mode flags: seeded data, no real mailbox, drafts only, reset button,
-   hard daily budget.
-9. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
-   Vercel or Cloudflare Pages.
-ds.
-5. **Pair table and guardrail gaps.** A `pair` row owning contract, policy,
-   approvers per side, channel, caps (R19, R20); approvers scoped to a pair
-   side (R8); per-workflow caps (R16); tool allowlist (R17). Why: turns "happens to be safe" into "cannot be
-   unsafe".
+## To do
+
+1. **Decide buyer-side vs seller-side (PRD open question 3).**
+   Why: it picks the first customer, the first metric, and who the
+   counterparty is in every diagram. Recommendation: buyer side, mid-market.
+2. **Decide ERP strategy for v1 (PRD open question 2).**
+   Why: integration is the biggest cost and not the product. Recommendation:
+   Postgres is the system of record for v1, one read-adapter interface so a
+   real ERP can slot in later.
+3. **Build the status-inquiry path, shadow mode.** (R1..R5)
+   Real intent classifier (four intents), resolver on counterparty + amount +
+   reference, drafts only. Why: read-only, no money moves, and it forces the
+   two pieces every later feature needs.
+4. **Pair setup flow.** Invite and accept between two companies, contract
+   and policy agreed on the pair, approvers named per side, a company home
+   screen listing its pairs (R19..R21). Why: today pairs are seeded as
+   already active; the demo needs the real flow.
+5. **Remaining guardrail gaps.** Per-workflow caps (R16), per-agent tool
+   allowlist (R17). Why: turns "happens to be safe" into "cannot be unsafe".
 6. **Update BRAIN.md with the 2026-09-07 decisions.**
    Why: it is the history doc and it still ends before the restart.
 
 ## Done
 
+- 2026-09-08 Pair table and pair-scoped execution (R8, R19, R20 in part).
+  `pair` row per company pair, approvers carry company and pair, execution
+  refuses an approver from another company or a pair that is not active,
+  pending lists and decline are scoped to the approver's side. Seven
+  offline tests. Why: approver scoping is now the data model, not a rule.
+- 2026-09-08 Bank-detail change sequence diagram (`docs/diagrams/bank-change`).
+  Why: the P3 story, email refused and signed still gated, had no picture.
+- 2026-09-08 Builder's guide at `docs/builder-guide.md`. Why: the owner
+  needs to know why each piece exists to judge changes, not only that it
+  exists.
 - 2026-09-08 Product model regroup: the unit of deployment is a pair of
   companies, not a company or a network. BRAIN.md entry, PRD v0.2 (section
   2a, R19 to R21), architecture and status-inquiry diagrams redrawn. Why:
@@ -71,3 +80,34 @@ Things that would be better but do not block the list above.
   the way. Neither maps to a PRD requirement.
 - Golden set of 50 real-shaped messages for the intent classifier, before
   anyone tunes a prompt.
+- The `/companies` pages still show every company. They are the old
+  bird's-eye view and go when the Jinja UI goes.
+
+## Production readiness
+
+Decided 2026-09-08: the target is a public demo site and a publishable
+working setup, not a laptop prototype. The shape stays small: one web
+process, one worker process, one Postgres. No Kubernetes, no broker.
+
+Keep: Python, FastAPI, LangGraph + Postgres checkpointer, Postgres 16,
+Docker, the React frontend under `frontend/`.
+Drop: Neo4j (cycle check becomes a recursive query in Postgres), the Jinja
+UI (the React app is the demo).
+
+In order:
+
+1. Alembic migrations; the seed script stops owning the schema. (The pair
+   table was applied to the demo database by hand on 2026-09-08; this is
+   the last time that should happen.)
+2. CI on GitHub Actions: unit tests, ruff, docker build, injection suite.
+3. Pin dependencies with a lock file.
+4. Worker process for mailbox polling and graph runs; Postgres queue with
+   SKIP LOCKED.
+5. Structured JSON logs with workflow id; Sentry; Langfuse or OpenTelemetry
+   for LLM traces.
+6. Rate limits on login and intake; daily LLM spend kill switch (R16).
+7. Per-agent tool allowlist (R17).
+8. Demo mode flags: seeded data, no real mailbox, drafts only, reset button,
+   hard daily budget.
+9. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
+   Vercel or Cloudflare Pages.

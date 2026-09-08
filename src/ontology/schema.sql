@@ -23,6 +23,23 @@ CREATE TABLE contract (
     CHECK (seller_company_id != buyer_company_id)
 );
 
+-- A pair is the unit of deployment (PRD v0.2, section 2a): one A-to-B
+-- relationship. Companies are stored in id order so (A, B) and (B, A) are
+-- the same row. Contract, policy, approvers, channel, and caps all belong
+-- to a pair. Nothing is autonomous across two companies without an active
+-- pair between them.
+CREATE TABLE pair (
+    id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_a_id           UUID NOT NULL REFERENCES company(id),
+    company_b_id           UUID NOT NULL REFERENCES company(id),
+    status                 TEXT NOT NULL DEFAULT 'invited' CHECK (status IN ('invited', 'active')),
+    invited_by_company_id  UUID NOT NULL REFERENCES company(id),
+    created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    accepted_at            TIMESTAMPTZ,
+    CHECK (company_a_id < company_b_id),
+    UNIQUE (company_a_id, company_b_id)
+);
+
 CREATE TABLE discount_policy (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     contract_id         UUID NOT NULL REFERENCES contract(id),
@@ -129,7 +146,9 @@ CREATE TABLE approver (
     username        TEXT PRIMARY KEY,
     password_hash   TEXT NOT NULL,      -- pbkdf2_hmac, salted (see src/api/auth.py)
     display_name    TEXT NOT NULL,
-    role            TEXT NOT NULL CHECK (role IN ('manager', 'cfo'))
+    role            TEXT NOT NULL CHECK (role IN ('manager', 'cfo')),
+    company_id      UUID NOT NULL REFERENCES company(id),  -- which side of the pair this person is
+    pair_id         UUID NOT NULL REFERENCES pair(id)      -- the one pair they may decide for (R8)
 );
 
 -- Intake idempotency (docs/reference/architecture.md §3.2): tracks which Gmail

@@ -85,7 +85,7 @@ class ExecutionRevalidatesOwnRate(unittest.TestCase):
 
     def test_revalidate_gets_this_proposals_rate(self):
         from src.tools import execution
-        cur = FakeCursor(rows=[("inv-1", "proposed", 0.30)])
+        cur = FakeCursor(rows=[("inv-1", "proposed", 0.30, "co-a", "active")])
         seen = {}
 
         def fake_revalidate(invoice_id, claimed_rate):
@@ -96,8 +96,33 @@ class ExecutionRevalidatesOwnRate(unittest.TestCase):
              mock.patch.object(execution, "revalidate_eligibility", fake_revalidate), \
              mock.patch.object(execution, "log_audit"):
             with self.assertRaises(execution.ExecutionError):
-                execution.execute_discount("prop-1", "Alex", "manager")
+                execution.execute_discount("prop-1", "Alex", "manager", approver_company_id="co-a")
         self.assertEqual(seen["args"], ("inv-1", 0.30))
+
+
+class ExecutionStaysInsideThePair(unittest.TestCase):
+    """Why: a discount is the seller's money. Only the seller's own approver
+    may release it (R8), and only inside an active pair with this buyer
+    (R19). Both checks run before any eligibility work."""
+
+    def _run(self, row, company):
+        from src.tools import execution
+        cur = FakeCursor(rows=[row])
+        with mock.patch.object(execution, "get_conn", fake_get_conn(cur)), \
+             mock.patch.object(execution, "revalidate_eligibility") as reval, \
+             mock.patch.object(execution, "log_audit"):
+            with self.assertRaises(execution.ExecutionError) as ctx:
+                execution.execute_discount("prop-1", "Alex", "cfo", approver_company_id=company)
+        reval.assert_not_called()
+        return str(ctx.exception)
+
+    def test_other_companys_approver_is_refused(self):
+        msg = self._run(("inv-1", "proposed", 0.05, "co-a", "active"), company="co-b")
+        self.assertIn("different company", msg)
+
+    def test_no_active_pair_is_refused(self):
+        msg = self._run(("inv-1", "proposed", 0.05, "co-a", "invited"), company="co-a")
+        self.assertIn("no active pair", msg)
 
 
 class EscalateScopedToWorkflow(unittest.TestCase):
