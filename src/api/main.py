@@ -471,7 +471,7 @@ def _my_company(request: Request) -> str | None:
     return approver["company_id"] if approver else None
 
 
-EMPTY_COST = {"workflows": 0, "calls": 0, "total_cost_usd": 0.0}
+EMPTY_COST = {"workflows": 0, "calls": 0, "total_cost_usd": 0.0, "total_cost_eur": 0.0}
 
 
 @app.get("/api/companies")

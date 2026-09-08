@@ -84,7 +84,8 @@ export interface Pair {
 export interface NetworkCost {
   workflows: number;
   calls: number;
-  total_cost_usd: number;
+  total_cost_usd: number; // provider currency, kept for the audit trail
+  total_cost_eur: number; // what the company sees
 }
 
 export interface AuditResponse {
@@ -98,6 +99,7 @@ export interface ModelUsageRow {
   tokens_in: number;
   tokens_out: number;
   cost_usd: number;
+  cost_eur: number;
 }
 
 export interface DecisionRow {

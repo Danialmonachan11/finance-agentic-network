@@ -12,6 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from src.guardrails.cost_tracker import to_eur
 from src.ontology.db import get_conn
 from src.orchestration.events import publish_event
 
@@ -487,6 +488,7 @@ def model_usage_summary(company_id: str, days: int = 30) -> list[dict]:
         rows = [dict(zip(cols, row)) for row in cur.fetchall()]
     for r in rows:
         r["cost_usd"] = float(r["cost_usd"])
+        r["cost_eur"] = to_eur(r["cost_usd"])
     return rows
 
 
@@ -626,7 +628,7 @@ def company_cost_summary(company_id: str) -> dict:
             {"cid": company_id},
         )
         workflows, calls, total_cost = cur.fetchone()
-    return {"workflows": workflows, "calls": calls, "total_cost_usd": float(total_cost)}
+    return {"workflows": workflows, "calls": calls, "total_cost_usd": float(total_cost), "total_cost_eur": to_eur(total_cost)}
 
 
 def pair_settings_for_invoice(invoice_id: str) -> dict | None:

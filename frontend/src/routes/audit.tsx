@@ -80,7 +80,7 @@ function AuditPage() {
         {[
           { label: "Workflows run", value: audit.network_cost.workflows.toLocaleString() },
           { label: "Model calls", value: audit.network_cost.calls.toLocaleString() },
-          { label: "Spend", value: `$${audit.network_cost.total_cost_usd.toFixed(4)}` },
+          { label: "Spend", value: `€${audit.network_cost.total_cost_eur.toFixed(4)}` },
         ].map((s) => (
           <div key={s.label} className="bg-card px-5 py-4">
             <p className="label-mono">{s.label}</p>

@@ -9,6 +9,7 @@ call, which would be a real integration for a production FinOps system but
 is overkill for a demo. Documented as an estimate, not claimed as exact.
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -22,6 +23,17 @@ MODEL_PRICING = {
     "anthropic/claude-haiku-4.5": (1.00, 5.00),
     "anthropic/claude-sonnet-5": (3.00, 15.00),
 }
+
+
+# The provider bills in US dollars, so the cost table stays in dollars and
+# is converted once, here, for everything the company sees: caps, pages,
+# summaries. Set USD_PER_EUR to the rate finance uses; the default is a
+# placeholder, not a quote.
+USD_PER_EUR = float(os.environ.get("USD_PER_EUR", "1.10"))
+
+
+def to_eur(usd: float) -> float:
+    return round(float(usd) / USD_PER_EUR, 6)
 
 
 def estimate_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
@@ -71,7 +83,7 @@ def get_network_cost_summary() -> dict:
             "SELECT count(DISTINCT workflow_id), count(*), COALESCE(SUM(estimated_cost_usd),0) FROM llm_call_cost"
         )
         workflows, calls, total_cost = cur.fetchone()
-    return {"workflows": workflows, "calls": calls, "total_cost_usd": float(total_cost)}
+    return {"workflows": workflows, "calls": calls, "total_cost_usd": float(total_cost), "total_cost_eur": to_eur(total_cost)}
 
 
 def demo() -> None:

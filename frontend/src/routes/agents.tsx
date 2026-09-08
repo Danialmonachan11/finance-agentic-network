@@ -20,8 +20,8 @@ import { getAutomation } from "@/lib/api";
 import { dateTime, pct } from "@/lib/fan-data";
 
 const WINDOW_LABEL = "last 30 days";
-/** Fully loaded hourly cost used for the savings figure below — an assumption, not measured. */
-const REVIEWER_HOURLY_COST_USD = 52;
+/** Fully loaded hourly cost used for the savings figure below, in euros. An assumption, not measured. */
+const REVIEWER_HOURLY_COST_EUR = 48;
 /** Minutes a reviewer historically spent on one request before the pipeline existed — an assumption, not measured. */
 const MINUTES_PER_MANUAL_REVIEW = 11;
 
@@ -46,8 +46,8 @@ export const Route = createFileRoute("/agents")({
   component: AgentsPage,
 });
 
-function usd(n: number, digits = 2) {
-  return `$${n.toLocaleString("en-US", {
+function eur(n: number, digits = 2) {
+  return `€${n.toLocaleString("de-DE", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   })}`;
@@ -90,9 +90,9 @@ function AgentsPage() {
   const decided = auto_declined + auto_executed + human_decided;
   const autoShare = decided ? (auto_declined + auto_executed) / decided : 0;
   const hoursSaved = ((auto_declined + auto_executed) * MINUTES_PER_MANUAL_REVIEW) / 60;
-  const labourSaved = hoursSaved * REVIEWER_HOURLY_COST_USD;
+  const labourSaved = hoursSaved * REVIEWER_HOURLY_COST_EUR;
   const models = data.models;
-  const totalCost = models.reduce((a, m) => a + m.cost_usd, 0);
+  const totalCost = models.reduce((a, m) => a + m.cost_eur, 0);
   const totalCalls = models.reduce((a, m) => a + m.calls, 0);
   const netSaved = labourSaved - totalCost;
   const costPerDecision = decided ? totalCost / decided : 0;
@@ -183,7 +183,7 @@ function AgentsPage() {
           <div className="space-y-4 px-5 py-5">
             <div>
               <p className="label-mono">Model spend, {WINDOW_LABEL}</p>
-              <p className="num mt-1 text-2xl font-semibold">{usd(totalCost, 4)}</p>
+              <p className="num mt-1 text-2xl font-semibold">{eur(totalCost, 4)}</p>
               <p className="mt-1 text-2xs text-muted-foreground">
                 Real provider-reported cost, not an estimate.
               </p>
@@ -195,13 +195,13 @@ function AgentsPage() {
                 <InfoTip label="How the saving is estimated">
                   {auto_declined + auto_executed} auto-decided requests × {MINUTES_PER_MANUAL_REVIEW}{" "}
                   minutes, an assumed median a reviewer spends per request, at{" "}
-                  {usd(REVIEWER_HOURLY_COST_USD, 0)}/hour fully loaded. The minutes and the hourly
+                  {eur(REVIEWER_HOURLY_COST_EUR, 0)}/hour fully loaded. The minutes and the hourly
                   rate are assumptions, not measured figures; the model cost above is measured.
                 </InfoTip>
               </p>
               <p className="num mt-1 text-2xl font-semibold">{hoursSaved.toFixed(1)} h</p>
               <p className="mt-1 text-2xs text-muted-foreground">
-                worth about {usd(labourSaved)} of reviewer time
+                worth about {eur(labourSaved)} of reviewer time
               </p>
             </div>
 
@@ -211,7 +211,7 @@ function AgentsPage() {
                 className="num mt-1 text-2xl font-semibold"
                 style={{ color: "var(--color-status-success-ink)" }}
               >
-                {usd(netSaved)}
+                {eur(netSaved)}
               </p>
               <p className="mt-1 text-2xs text-muted-foreground">
                 estimated saving minus the measured model spend
@@ -220,7 +220,7 @@ function AgentsPage() {
 
             <div className="border-t border-border pt-4">
               <p className="label-mono">Cost per decision</p>
-              <p className="num mt-1 text-base font-semibold">{usd(costPerDecision, 4)}</p>
+              <p className="num mt-1 text-base font-semibold">{eur(costPerDecision, 4)}</p>
             </div>
           </div>
         </Panel>
@@ -230,7 +230,7 @@ function AgentsPage() {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         <Stat label="Models in use" value={new Set(models.map((m) => m.model)).size} />
         <Stat label="Model calls" value={totalCalls.toLocaleString()} />
-        <Stat label="Spend across models" value={usd(totalCost, 4)} tone="accent" />
+        <Stat label="Spend across models" value={eur(totalCost, 4)} tone="accent" />
       </div>
 
       <Panel
@@ -259,7 +259,7 @@ function AgentsPage() {
                   {m.tokens_in.toLocaleString()} / {m.tokens_out.toLocaleString()}
                 </Td>
                 <Td mono align="right">
-                  {usd(m.cost_usd, 4)}
+                  {eur(m.cost_eur, 4)}
                 </Td>
               </tr>
             ))}

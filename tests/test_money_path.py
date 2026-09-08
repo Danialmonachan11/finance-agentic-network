@@ -243,8 +243,8 @@ class WorkflowCaps(unittest.TestCase):
     def test_each_cap_raises_with_its_name(self):
         from src.guardrails import caps
         for args, name in (((caps.WORKFLOW_MAX_LLM_CALLS, 0.0, 0.0), "llm_calls"),
-                           ((0, caps.WORKFLOW_MAX_SPEND_USD, 0.0), "workflow_spend_usd"),
-                           ((0, 0.0, caps.DAILY_MAX_SPEND_USD), "daily_spend_usd")):
+                           ((0, caps.WORKFLOW_MAX_SPEND_EUR * caps.USD_PER_EUR, 0.0), "workflow_spend_eur"),
+                           ((0, 0.0, caps.DAILY_MAX_SPEND_EUR * caps.USD_PER_EUR), "daily_spend_eur")):
             with self.assertRaises(caps.CapExceeded) as ctx:
                 self._guard(*args)
             self.assertEqual(ctx.exception.cap, name)
