@@ -46,6 +46,15 @@ def authenticate(username: str, password: str) -> dict | None:
             "company_id": str(company_id), "pair_id": str(pair_id)}
 
 
+def session_is_current(username: str, company_id: str) -> bool:
+    """True if this username still exists with this company id. Cheap, one
+    indexed lookup, and it is what turns a stale cookie into 'signed out'
+    rather than 'signed in to an empty company'."""
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM approver WHERE username = %s AND company_id = %s", (username, company_id))
+        return cur.fetchone() is not None
+
+
 def seed_approvers() -> None:
     """Idempotent demo seed. Each approver sits on one side of one pair
     (PRD R8): Alice approves for Kessler on the Kessler-Nordwind pair, Bob

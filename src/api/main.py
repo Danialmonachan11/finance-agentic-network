@@ -178,7 +178,16 @@ def current_approver(request: Request) -> dict | None:
     approver = request.session.get("approver")
     # Sessions from before approvers were pair-scoped carry no company; treat
     # them as signed out so nothing runs unscoped.
-    return approver if approver and "company_id" in approver else None
+    if not approver or "company_id" not in approver:
+        return None
+    # A reseed gives every company a new id. A cookie minted before that
+    # would scope every query to a company that no longer exists and show an
+    # empty app. Check the session still matches a real approver row; if not,
+    # it is signed out.
+    if not auth.session_is_current(approver["username"], approver["company_id"]):
+        request.session.pop("approver", None)
+        return None
+    return approver
 
 
 @app.get("/login")
