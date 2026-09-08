@@ -7,7 +7,6 @@ import { getMe, getProposals, logout } from "@/lib/api";
 const primaryNav = [
   { to: "/pairs", label: "Pairs", badge: false },
   { to: "/queue", label: "Approval queue", badge: true },
-  { to: "/", label: "Companies" },
   { to: "/invoices", label: "Invoices" },
   { to: "/executed", label: "Executed" },
   { to: "/agents", label: "Agent performance" },
@@ -49,7 +48,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <li key={item.to}>
                   <Link
                     to={item.to}
-                    activeOptions={{ exact: item.to === "/" }}
                     className="flex items-center justify-between rounded-md px-2 py-2 text-sm text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
                     activeProps={{
                       className: "bg-sidebar-accent !text-sidebar-foreground font-medium",

@@ -16,7 +16,22 @@ from src.ontology.db import get_conn
 from src.orchestration.events import publish_event
 
 
-def list_recent_workflows(limit: int = 25) -> list[dict]:
+# Which workflow ids touch a company (PRD 2a: a company sees its own cases
+# only). A workflow is the company's if its proposal is on one of the
+# company's invoices, or if any of its events names one of them. Used as a
+# subquery with a %(cid)s parameter.
+MY_WORKFLOWS_SQL = """
+    SELECT dp.workflow_id FROM discount_proposal dp
+    JOIN invoice i ON i.id = dp.invoice_id
+    WHERE dp.workflow_id IS NOT NULL AND %(cid)s IN (i.seller_company_id, i.buyer_company_id)
+    UNION
+    SELECT we.workflow_id FROM workflow_event we
+    JOIN invoice i ON i.invoice_number = we.payload->>'invoice_number' OR i.id::text = we.payload->>'invoice_id'
+    WHERE %(cid)s IN (i.seller_company_id, i.buyer_company_id)
+"""
+
+
+def list_recent_workflows(company_id: str, limit: int = 25) -> list[dict]:
     """One row per workflow_id: its latest audit_log entry, which shows
     where the workflow currently stands (proposed / escalated / executed)."""
     with get_conn() as conn, conn.cursor() as cur:
@@ -25,10 +40,11 @@ def list_recent_workflows(limit: int = 25) -> list[dict]:
             SELECT DISTINCT ON (workflow_id)
                 workflow_id, step, agent, decision, reason, occurred_at
             FROM audit_log
+            WHERE workflow_id IN ({MY})
             ORDER BY workflow_id, occurred_at DESC
-            LIMIT %s
-            """,
-            (limit,),
+            LIMIT %(limit)s
+            """.replace("{MY}", MY_WORKFLOWS_SQL),
+            {"cid": company_id, "limit": limit},
         )
         cols = [c.name for c in cur.description]
         rows = [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -47,25 +63,36 @@ def get_workflow_trace(workflow_id: str) -> list[dict]:
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
-def list_companies() -> list[dict]:
-    """Network overview: every company, with counts of invoices where it's
-    the seller vs the buyer — this is what makes it visible that the same
-    company plays both roles, not a fixed one-directional relationship."""
+def list_companies(company_id: str) -> list[dict]:
+    """The signed-in company and its counterparties (the other side of each
+    of its pairs), nothing else (PRD R21). Every count is relative to the
+    signed-in company: a counterparty's 'invoices as seller' means invoices
+    it sold to us, not everything it ever sold to anyone."""
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(
             """
+            WITH me AS (SELECT %(cid)s::uuid AS id)
             SELECT c.id, c.name,
-                   (SELECT count(*) FROM invoice i WHERE i.seller_company_id = c.id) AS invoices_as_seller,
-                   (SELECT count(*) FROM invoice i WHERE i.buyer_company_id = c.id) AS invoices_as_buyer,
-                   (SELECT count(*) FROM discount_proposal dp JOIN invoice i ON i.id = dp.invoice_id
-                    WHERE i.seller_company_id = c.id AND dp.status = 'proposed') AS pending_as_seller,
-                   COALESCE((SELECT SUM(i2.amount) FROM invoice i2
-                    WHERE i2.seller_company_id = c.id AND i2.status != 'paid'), 0) AS receivable,
-                   COALESCE((SELECT SUM(i2.amount) FROM invoice i2
-                    WHERE i2.buyer_company_id = c.id AND i2.status != 'paid'), 0) AS payable
-            FROM company c
-            ORDER BY c.name
-            """
+                   (SELECT count(*) FROM invoice i, me WHERE i.seller_company_id = c.id
+                      AND (c.id = me.id OR i.buyer_company_id = me.id)) AS invoices_as_seller,
+                   (SELECT count(*) FROM invoice i, me WHERE i.buyer_company_id = c.id
+                      AND (c.id = me.id OR i.seller_company_id = me.id)) AS invoices_as_buyer,
+                   (SELECT count(*) FROM discount_proposal dp JOIN invoice i ON i.id = dp.invoice_id, me
+                    WHERE i.seller_company_id = c.id AND dp.status = 'proposed'
+                      AND (c.id = me.id OR i.buyer_company_id = me.id)) AS pending_as_seller,
+                   COALESCE((SELECT SUM(i2.amount) FROM invoice i2, me
+                    WHERE i2.seller_company_id = c.id AND i2.status != 'paid'
+                      AND (c.id = me.id OR i2.buyer_company_id = me.id)), 0) AS receivable,
+                   COALESCE((SELECT SUM(i2.amount) FROM invoice i2, me
+                    WHERE i2.buyer_company_id = c.id AND i2.status != 'paid'
+                      AND (c.id = me.id OR i2.seller_company_id = me.id)), 0) AS payable
+            FROM company c, me
+            WHERE c.id = me.id
+               OR EXISTS (SELECT 1 FROM pair p WHERE me.id IN (p.company_a_id, p.company_b_id)
+                                                 AND c.id IN (p.company_a_id, p.company_b_id))
+            ORDER BY (c.id = me.id) DESC, c.name
+            """,
+            {"cid": company_id},
         )
         cols = [c.name for c in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -348,7 +375,7 @@ def decline_proposal(proposal_id: str, approver_name: str, approver_company_id: 
 _AUTO_EXECUTE_APPROVER_PREFIX = "AI Agent (auto-execute"
 
 
-def count_decisions_in_window(days: int = 30) -> dict:
+def count_decisions_in_window(company_id: str, days: int = 30) -> dict:
     """Automation summary for the agents page: how many discount_proposal
     decisions in the last `days` were made by the pipeline alone, either
     declining (auto-declined — same discriminator as
@@ -361,14 +388,16 @@ def count_decisions_in_window(days: int = 30) -> dict:
         cur.execute(
             """
             SELECT count(*),
-                   count(*) FILTER (WHERE status = 'rejected' AND workflow_id IS NOT NULL AND approved_by IS NULL),
-                   count(*) FILTER (WHERE approved_by LIKE %s),
-                   count(*) FILTER (WHERE approved_by IS NOT NULL AND approved_by NOT LIKE %s),
-                   count(*) FILTER (WHERE status = 'proposed')
-            FROM discount_proposal
-            WHERE created_at >= now() - (%s * interval '1 day')
+                   count(*) FILTER (WHERE dp.status = 'rejected' AND dp.workflow_id IS NOT NULL AND dp.approved_by IS NULL),
+                   count(*) FILTER (WHERE dp.approved_by LIKE %s),
+                   count(*) FILTER (WHERE dp.approved_by IS NOT NULL AND dp.approved_by NOT LIKE %s),
+                   count(*) FILTER (WHERE dp.status = 'proposed')
+            FROM discount_proposal dp
+            JOIN invoice i ON i.id = dp.invoice_id
+            WHERE dp.created_at >= now() - (%s * interval '1 day')
+              AND %s IN (i.seller_company_id, i.buyer_company_id)
             """,
-            (_AUTO_EXECUTE_APPROVER_PREFIX + "%", _AUTO_EXECUTE_APPROVER_PREFIX + "%", days),
+            (_AUTO_EXECUTE_APPROVER_PREFIX + "%", _AUTO_EXECUTE_APPROVER_PREFIX + "%", days, company_id),
         )
         total, auto_declined, auto_executed, human_decided, still_pending = cur.fetchone()
     return {
@@ -377,28 +406,30 @@ def count_decisions_in_window(days: int = 30) -> dict:
     }
 
 
-def weekly_decision_trend(days: int = 30) -> list[dict]:
+def weekly_decision_trend(company_id: str, days: int = 30) -> list[dict]:
     """Same three-way split as count_decisions_in_window, bucketed by ISO
     week, oldest first, for the agents page's weekly bars."""
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT date_trunc('week', created_at) AS week,
-                   count(*) FILTER (WHERE status = 'rejected' AND workflow_id IS NOT NULL AND approved_by IS NULL) AS auto_declined,
-                   count(*) FILTER (WHERE approved_by LIKE %s) AS auto_executed,
-                   count(*) FILTER (WHERE approved_by IS NOT NULL AND approved_by NOT LIKE %s) AS human_decided
-            FROM discount_proposal
-            WHERE created_at >= now() - (%s * interval '1 day')
+            SELECT date_trunc('week', dp.created_at) AS week,
+                   count(*) FILTER (WHERE dp.status = 'rejected' AND dp.workflow_id IS NOT NULL AND dp.approved_by IS NULL) AS auto_declined,
+                   count(*) FILTER (WHERE dp.approved_by LIKE %s) AS auto_executed,
+                   count(*) FILTER (WHERE dp.approved_by IS NOT NULL AND dp.approved_by NOT LIKE %s) AS human_decided
+            FROM discount_proposal dp
+            JOIN invoice i ON i.id = dp.invoice_id
+            WHERE dp.created_at >= now() - (%s * interval '1 day')
+              AND %s IN (i.seller_company_id, i.buyer_company_id)
             GROUP BY week
             ORDER BY week
             """,
-            (_AUTO_EXECUTE_APPROVER_PREFIX + "%", _AUTO_EXECUTE_APPROVER_PREFIX + "%", days),
+            (_AUTO_EXECUTE_APPROVER_PREFIX + "%", _AUTO_EXECUTE_APPROVER_PREFIX + "%", days, company_id),
         )
         cols = [c.name for c in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
-def list_decisions_in_window(days: int = 30, limit: int = 50) -> list[dict]:
+def list_decisions_in_window(company_id: str, days: int = 30, limit: int = 50) -> list[dict]:
     """The actual rows behind count_decisions_in_window's numbers — every
     proposal in the window that was decided one way or another (declined by
     the pipeline, executed by the agent, or decided by a human), newest
@@ -421,18 +452,19 @@ def list_decisions_in_window(days: int = 30, limit: int = 50) -> list[dict]:
             JOIN company s ON s.id = i.seller_company_id
             JOIN company b ON b.id = i.buyer_company_id
             WHERE dp.created_at >= now() - (%s * interval '1 day')
+              AND %s IN (i.seller_company_id, i.buyer_company_id)
               AND (dp.approved_by IS NOT NULL
                    OR (dp.status = 'rejected' AND dp.workflow_id IS NOT NULL))
             ORDER BY COALESCE(dp.decided_at, dp.created_at) DESC
             LIMIT %s
             """,
-            (_AUTO_EXECUTE_APPROVER_PREFIX + "%", days, limit),
+            (_AUTO_EXECUTE_APPROVER_PREFIX + "%", days, company_id, limit),
         )
         cols = [c.name for c in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
-def model_usage_summary(days: int = 30) -> list[dict]:
+def model_usage_summary(company_id: str, days: int = 30) -> list[dict]:
     """Per-model call/token/cost totals from llm_call_cost for the window —
     no latency or agreement_rate columns, they don't exist on this table
     (see docs/design/lovable/10-agents-page-plan.md Phase 0)."""
@@ -444,11 +476,12 @@ def model_usage_summary(days: int = 30) -> list[dict]:
                    COALESCE(SUM(output_tokens), 0) AS tokens_out,
                    COALESCE(SUM(estimated_cost_usd), 0) AS cost_usd
             FROM llm_call_cost
-            WHERE occurred_at >= now() - (%s * interval '1 day')
+            WHERE occurred_at >= now() - (%(days)s * interval '1 day')
+              AND workflow_id IN ({MY})
             GROUP BY model
             ORDER BY model
-            """,
-            (days,),
+            """.replace("{MY}", MY_WORKFLOWS_SQL),
+            {"days": days, "cid": company_id},
         )
         cols = [c.name for c in cur.description]
         rows = [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -457,23 +490,27 @@ def model_usage_summary(days: int = 30) -> list[dict]:
     return rows
 
 
-def list_all_invoices(pdf_stems: set[str] | None = None) -> list[dict]:
-    """Network-wide invoice list — used by /invoices (document viewer) and
-    the ops view. Not company-scoped; that's list_invoices_where_buyer's job.
-    `pdf_stems` (invoice numbers with a real PDF on disk) is optional so
-    callers that don't care about has_pdf don't pay for the glob."""
+def list_all_invoices(company_id: str, pdf_stems: set[str] | None = None) -> list[dict]:
+    """The signed-in company's invoices, both directions: 'payable' when it
+    is the buyer, 'receivable' when it is the seller. Invoices between two
+    other companies never appear (PRD 2a). `pdf_stems` (invoice numbers with
+    a real PDF on disk) is optional so callers that don't care about has_pdf
+    don't pay for the glob."""
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(
             """
             SELECT i.id AS invoice_id, i.invoice_number, i.amount,
                    s.name AS seller_name, b.name AS buyer_name,
-                   ct.status AS contract_status
+                   ct.status AS contract_status,
+                   CASE WHEN i.buyer_company_id = %(cid)s THEN 'payable' ELSE 'receivable' END AS direction
             FROM invoice i
             JOIN company s ON s.id = i.seller_company_id
             JOIN company b ON b.id = i.buyer_company_id
             LEFT JOIN contract ct ON ct.id = i.contract_id
+            WHERE %(cid)s IN (i.seller_company_id, i.buyer_company_id)
             ORDER BY i.invoice_number
-            """
+            """,
+            {"cid": company_id},
         )
         cols = [c.name for c in cur.description]
         rows = [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -578,6 +615,18 @@ def set_pair_auto_reply(pair_id: str, my_company_id: str, enabled: bool) -> bool
             (enabled, pair_id, my_company_id),
         )
         return cur.rowcount == 1
+
+
+def company_cost_summary(company_id: str) -> dict:
+    """What this company's agent has spent, over its own workflows only."""
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT count(DISTINCT workflow_id), count(*), COALESCE(SUM(estimated_cost_usd), 0) "
+            "FROM llm_call_cost WHERE workflow_id IN (" + MY_WORKFLOWS_SQL + ")",
+            {"cid": company_id},
+        )
+        workflows, calls, total_cost = cur.fetchone()
+    return {"workflows": workflows, "calls": calls, "total_cost_usd": float(total_cost)}
 
 
 def pair_settings_for_invoice(invoice_id: str) -> dict | None:

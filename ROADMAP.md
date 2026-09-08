@@ -19,6 +19,13 @@ Order inside "To do" is priority order.
 
 ## Done
 
+- 2026-09-08 Every screen is the signed-in company's view: companies are
+  me plus my counterparties with counts relative to me, invoices are mine
+  with a payable/receivable direction, executed, audit, agent activity, and
+  cost cover my workflows only, and the old Companies overview redirects to
+  Pairs. Signed out means empty, never the network. Why: Alice must see
+  what her own agent is doing, not a bird's-eye view. Grounded in
+  `docs/market/day-in-the-life.md`.
 - 2026-09-08 Pair setup flow (R19, R21, R5 switch): invite and accept over
   `/api/pairs`, only the invited side can accept, a per-pair switch that
   turns status replies from drafts into sends, `/pairs` home screen in the
@@ -82,8 +89,9 @@ Things that would be better but do not block the list above.
   anyone tunes a prompt.
 - Approvers are created by the seed script only. A pair admin should be
   able to name approvers for their side from the `/pairs` page (R20).
-- The `/companies` pages still show every company. They are the old
-  bird's-eye view and go when the Jinja UI goes.
+- The Jinja pages under `/companies` still show every company. They are
+  the old bird's-eye view and go when the Jinja UI goes. The JSON API and
+  the React app are already scoped.
 
 ## Production readiness
 

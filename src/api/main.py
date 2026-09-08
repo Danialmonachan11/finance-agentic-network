@@ -66,6 +66,7 @@ from src.api.queries import (
     invite_pair,
     accept_pair,
     set_pair_auto_reply,
+    company_cost_summary,
     list_recent_workflows,
     mark_invoice_emailed,
     model_usage_summary,
@@ -228,7 +229,7 @@ def _company_page_context(request: Request, company_id: str, result: dict | None
         "invoices": invoices,
         "invoices_as_seller_count": sum(1 for inv in invoices if inv["role"] == "issued"),
         "invoices_as_buyer": list_invoices_where_buyer(company_id),
-        "other_companies": [c for c in list_companies() if c["id"] != company["id"]],
+        "other_companies": [c for c in list_companies(company["id"]) if c["id"] != company["id"]],
         "pending": list_pending_proposals_for_seller(company_id),
         "auto_rejected": list_auto_rejected_for_seller(company_id),
         "executed": list_executed_for_company(company_id),
@@ -453,14 +454,39 @@ def invoice_extract(request: Request, invoice_number: str):
 # Each route wraps the same query function/context its HTML counterpart
 # already calls, zero new business logic. See docs/design/lovable/09-*.md.
 
+# Every JSON read below is the signed-in company's view (PRD 2a, R21).
+# Signed out means empty, never the whole network.
+
+def _my_company(request: Request) -> str | None:
+    approver = current_approver(request)
+    return approver["company_id"] if approver else None
+
+
+EMPTY_COST = {"workflows": 0, "calls": 0, "total_cost_usd": 0.0}
+
+
 @app.get("/api/companies")
-def api_companies():
-    return list_companies()
+def api_companies(request: Request):
+    me = _my_company(request)
+    return list_companies(me) if me else []
 
 
 @app.get("/api/companies/{company_id}")
 def api_company_detail(request: Request, company_id: str):
+    me = _my_company(request)
+    if me is None:
+        raise HTTPException(401, "not signed in")
     context = _company_page_context(request, company_id)
+    if company_id != me:
+        # A counterparty page is the pair page: only what is between us.
+        mine = get_company(me)["name"]
+        context["invoices"] = [i for i in context["invoices"] if i["counterparty"] == mine]
+        context["invoices_as_seller_count"] = sum(1 for i in context["invoices"] if i["role"] == "issued")
+        context["invoices_as_buyer"] = [i for i in context["invoices_as_buyer"] if i["seller_name"] == mine]
+        context["pending"] = [p for p in context["pending"] if p["buyer_name"] == mine]
+        context["auto_rejected"] = [p for p in context["auto_rejected"] if p.get("buyer_name") == mine]
+        context["executed"] = [p for p in context["executed"] if mine in (p["seller_name"], p["buyer_name"])]
+    context["other_companies"] = [c for c in list_companies(me) if str(c["id"]) != company_id]
     # result/invoice_result are POST-flash fields (always None on a GET);
     # approver is covered separately by /api/me.
     for key in ("result", "invoice_result", "approver"):
@@ -486,37 +512,48 @@ def api_proposals(request: Request):
 
 
 @app.get("/api/invoices")
-def api_invoices():
+def api_invoices(request: Request):
+    me = _my_company(request)
+    if me is None:
+        return []
     pdf_stems = {p.stem for p in INVOICE_PDF_DIR.glob("*.pdf")}
-    return list_all_invoices(pdf_stems)
+    return list_all_invoices(me, pdf_stems)
 
 
 @app.get("/api/executed")
-def api_executed():
-    return list_executed_proposals()
+def api_executed(request: Request):
+    me = _my_company(request)
+    return list_executed_for_company(me) if me else []
 
 
 @app.get("/api/audit")
-def api_audit():
+def api_audit(request: Request):
+    me = _my_company(request)
+    if me is None:
+        return {"workflows": [], "network_cost": EMPTY_COST}
     # decision -> status, occurred_at -> timestamp: renamed here to match the
     # frontend's AuditRow type (frontend/src/lib/fan-data.ts).
     # The underlying audit_log column names are untouched.
     workflows = []
-    for w in list_recent_workflows():
+    for w in list_recent_workflows(me):
         decision = w.pop("decision")
         occurred_at = w.pop("occurred_at")
         workflows.append({**w, "status": decision, "timestamp": occurred_at})
-    return {"workflows": workflows, "network_cost": get_network_cost_summary()}
+    return {"workflows": workflows, "network_cost": company_cost_summary(me)}
 
 
 @app.get("/api/automation")
-def api_automation(days: int = 30):
+def api_automation(request: Request, days: int = 30):
+    me = _my_company(request)
+    if me is None:
+        return {"decided_or_pending": {"total": 0, "auto_declined": 0, "auto_executed": 0, "human_decided": 0, "still_pending": 0},
+                "weekly": [], "models": [], "network_cost": EMPTY_COST, "decisions": []}
     return {
-        "decided_or_pending": count_decisions_in_window(days),
-        "weekly": weekly_decision_trend(days),
-        "models": model_usage_summary(days),
-        "network_cost": get_network_cost_summary(),
-        "decisions": list_decisions_in_window(days),
+        "decided_or_pending": count_decisions_in_window(me, days),
+        "weekly": weekly_decision_trend(me, days),
+        "models": model_usage_summary(me, days),
+        "network_cost": company_cost_summary(me),
+        "decisions": list_decisions_in_window(me, days),
     }
 
 

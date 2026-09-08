@@ -269,7 +269,7 @@ One line per box. Add to this, never edit history.
 | R8 approver scoping | Present: approvers carry company and pair; execution and decline refuse other companies |
 | R19 pairing | Present: invite and accept over `/api/pairs`; only the invited side can accept; execution requires an active pair |
 | R20 pair config | Partial: the status-reply send switch lives on the pair; caps and channel config do not exist yet; approvers are seeded, not named through the UI |
-| R21 home screen | Present: `/pairs` in the React app lists the signed-in company's pairs only |
+| R21 home screen | Present: `/pairs` is home; every JSON read (companies, invoices, executed, audit, automation, cost) is scoped to the signed-in company |
 | R9 idempotent execution | Present; revalidation now checks the executed proposal's own rate |
 | R10 to R12 bank change | Partial: classified and escalated, never applied (R10). Verification task and signed path missing |
 | R13, R14 network | Missing |

@@ -53,6 +53,7 @@ export interface InvoiceRow {
   amount: number;
   contract_status: ContractStatus | null; // LEFT JOIN contract — null when the invoice has no contract row at all
   has_pdf: boolean; // real generated invoices have a PDF on disk; seeded rows don't
+  direction: "payable" | "receivable"; // relative to the signed-in company
 }
 
 export interface ExecutedRow {

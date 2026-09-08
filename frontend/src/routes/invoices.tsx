@@ -193,6 +193,7 @@ function InvoicesPage() {
                   >
                     Amount
                   </SortTh>
+                  <Th>Direction</Th>
                   <Th>Contract</Th>
                   <Th>Document</Th>
                 </tr>
@@ -205,6 +206,7 @@ function InvoicesPage() {
                     </Td>
                     <Td>{inv.seller_name}</Td>
                     <Td>{inv.buyer_name}</Td>
+                    <Td>{inv.direction === "payable" ? "We owe" : "Owed to us"}</Td>
                     <Td mono align="right">
                       {money(inv.amount)}
                     </Td>

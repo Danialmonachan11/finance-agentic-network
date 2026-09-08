@@ -175,6 +175,13 @@ company's pair admin and sees all of its pairs; one with a pair sees that
 pair. The one switch on a pair today decides whether status replies are
 sent or drafted. Money-moving replies are never sent by the agent.
 
+Every other JSON read is scoped the same way: the signed-in company sees
+its counterparties, its invoices in both directions, and the audit and
+cost of its own workflows. `MY_WORKFLOWS_SQL` in `queries.py` is the one
+definition of "my workflows" and every scoped query embeds it. Signed out
+returns empty, never the network. `docs/market/day-in-the-life.md` is the
+reasoning behind which screens exist.
+
 ### MCP server (`src/mcp_server/`)
 
 Exposes the grounded discount check as a tool an outside agent could call.
