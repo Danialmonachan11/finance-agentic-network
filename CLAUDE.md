@@ -5,7 +5,7 @@ Postgres + Neo4j, real Gmail intake, a propose/execute approval split,
 prompt-injection tests, and a FastAPI web app modeling a network of
 companies (not a fixed single-operator setup).
 
-**Read `docs/prd.md` first, then `BRAIN.md`, every session.** The PRD is the
+**Read `docs/prd.md` first, then `BRAIN.md`, then `ROADMAP.md`, every session.** The PRD is the
 rebuild target as of 2026-09-07; BRAIN.md is the history of what exists.
 
 **BRAIN.md note:** It's the living source of truth —
