@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "Status inquiry: one email answered without a human",
+    "title": "Status inquiry: B asks A by email, answered without a human",
     "quality_profile": "showcase",
     "viewBox": [
       1050,
@@ -18,7 +18,7 @@
           "gateway",
           "registry"
         ],
-        "note": "The sender is checked against the registry before anything is trusted. No key means email-only mode."
+        "note": "The sender is matched to a pair before anything is trusted. Invite still pending means email-only mode."
       },
       {
         "id": "ground",
@@ -28,7 +28,7 @@
           "erp",
           "llm"
         ],
-        "note": "The answer comes from the system of record. The model only phrases it."
+        "note": "The answer comes from A's system of record. The model only phrases it."
       },
       {
         "id": "reply",
@@ -38,7 +38,7 @@
           "mailbox",
           "seller"
         ],
-        "note": "Draft by default. Sends only if this counterparty and message type are enabled."
+        "note": "Draft by default. Sends only if this pair has autonomous replies switched on for this message type."
       }
     ],
     "column_fit": "spread"
@@ -47,37 +47,37 @@
     {
       "id": "seller",
       "type": "external",
-      "label": "Seller AR",
-      "sublabel": "counterparty"
+      "label": "B's AR team",
+      "sublabel": "seller side"
     },
     {
       "id": "mailbox",
       "type": "external",
-      "label": "Mailbox",
+      "label": "A's mailbox",
       "sublabel": "Gmail / Outlook"
     },
     {
       "id": "gateway",
       "type": "security",
-      "label": "Gateway",
+      "label": "A's gateway",
       "sublabel": "classify, resolve"
     },
     {
       "id": "registry",
       "type": "security",
-      "label": "Registry",
-      "sublabel": "identity"
+      "label": "Pair A to B",
+      "sublabel": "keys, policy"
     },
     {
       "id": "agent",
       "type": "backend",
-      "label": "Agent",
+      "label": "A's agent",
       "sublabel": "LangGraph"
     },
     {
       "id": "erp",
       "type": "database",
-      "label": "ERP",
+      "label": "A's ERP",
       "sublabel": "system of record"
     },
     {
@@ -123,14 +123,14 @@
       "from": "gateway",
       "to": "registry",
       "y": 234,
-      "label": "sender known? signed?",
+      "label": "is this B? pair active?",
       "variant": "security"
     },
     {
       "from": "registry",
       "to": "gateway",
       "y": 263,
-      "label": "no key: email-only mode",
+      "label": "invite pending: email-only",
       "variant": "return"
     },
     {
@@ -226,16 +226,16 @@
     },
     {
       "dot": "rose",
-      "title": "Trust before content",
+      "title": "Pair before content",
       "items": [
-        "Registry lookup precedes classification; unknown sender means draft only"
+        "Pair lookup precedes classification; no active pair means draft only"
       ]
     },
     {
       "dot": "cyan",
       "title": "The model states no facts",
       "items": [
-        "Status and date come from the ERP row; the LLM only phrases them"
+        "Status and date come from A's ERP row; the LLM only phrases them"
       ]
     }
   ]

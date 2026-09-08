@@ -26,14 +26,20 @@ In order:
 9. Hosting: API + worker on Fly.io or Railway, Postgres on Neon, frontend on
    Vercel or Cloudflare Pages.
 ds.
-5. **Guardrail gaps.** Company-scoped approvers (R8), per-workflow caps (R16),
-   tool allowlist (R17). Why: turns "happens to be safe" into "cannot be
+5. **Pair table and guardrail gaps.** A `pair` row owning contract, policy,
+   approvers per side, channel, caps (R19, R20); approvers scoped to a pair
+   side (R8); per-workflow caps (R16); tool allowlist (R17). Why: turns "happens to be safe" into "cannot be
    unsafe".
 6. **Update BRAIN.md with the 2026-09-07 decisions.**
    Why: it is the history doc and it still ends before the restart.
 
 ## Done
 
+- 2026-09-08 Product model regroup: the unit of deployment is a pair of
+  companies, not a company or a network. BRAIN.md entry, PRD v0.2 (section
+  2a, R19 to R21), architecture and status-inquiry diagrams redrawn. Why:
+  the PRD had been written from the code, and the code was a platform view
+  the user never wanted.
 - 2026-09-08 Four money-path bugs fixed (R6..R9): revalidation checks the
   executed proposal's own rate; rates outside (0, 1] rejected; `escalate`
   only rejects its own workflow's proposal; contract-less invoice is a
