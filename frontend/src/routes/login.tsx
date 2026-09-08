@@ -64,7 +64,7 @@ function LoginPage() {
         >
           <h1 className="text-xl font-semibold">Sign in</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            One account works across every company in the network.
+            Your account belongs to one company. You see its pairs, its invoices, and its agent, nothing else.
           </p>
 
           <div className="mt-8 space-y-5">

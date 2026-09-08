@@ -216,7 +216,7 @@ function CompanyPage() {
           )}
         </Panel>
 
-        <Panel title="Invoice tracker" description="Every invoice this company is a party to.">
+        <Panel title="Invoice tracker" description="Invoices between your company and this counterparty.">
           <Table>
             <thead>
               <tr>
