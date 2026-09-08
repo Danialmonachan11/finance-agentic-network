@@ -77,8 +77,8 @@ flag the change but cannot verify it. Verification needs the seller.
 **What a network changes.** A bank-detail change becomes a signed message
 from the seller's agent under the seller's identity, not an email. The
 buyer's agent refuses any change that did not arrive over the network
-channel. The callback becomes structural rather than procedural. This is
-the one pain where the network is not just faster but categorically safer.
+channel. The callback becomes structural rather than procedural. Every other
+pain on this list the network makes faster. This one it makes safer.
 
 ### 4. Early-payment discount capture (medium network fit)
 
@@ -157,8 +157,8 @@ The current build already has the core loop for the second one
 is that same loop with an agent, not a human, at the far end of the
 email.
 
-The cheapest wedge is status inquiry (pain 1): read-only, no money moves,
-trivially safe, and the same integration (an agent that can answer "what
+The cheapest place to start is status inquiry (pain 1). It is read-only,
+no money moves, it is safe by construction, and the same integration (an agent that can answer "what
 is the state of invoice X" from the ERP) is the foundation for the other
 two. Bank-change verification (pain 3) is the highest-value safety story
 and the easiest to explain to a CFO. Disputes (pain 2) is where the

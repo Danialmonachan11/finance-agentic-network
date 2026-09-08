@@ -20,13 +20,13 @@ Order inside "To do" is priority order.
    Postgres is the system of record for v1, one read-adapter interface so a
    real ERP can slot in later.
 3. **Draw the bank-detail change flow.** (P3)
-   Why: the only pain where the network is categorically safer, not just
-   faster, and it has no diagram yet.
+   Why: the one pain the network makes safer rather than faster, and it
+   has no diagram yet.
 4. **Build the status-inquiry path, shadow mode.** (R1..R5)
    Real intent classifier (four intents), resolver on counterparty + amount +
    reference, drafts only. Why: read-only, no money moves, and it forces the
    two pieces every later feature needs.
-5. **Harness gaps.** Company-scoped approvers (R8), per-workflow caps (R16),
+5. **Guardrail gaps.** Company-scoped approvers (R8), per-workflow caps (R16),
    tool allowlist (R17). Why: turns "happens to be safe" into "cannot be
    unsafe".
 6. **Update BRAIN.md with the 2026-09-07 decisions.**

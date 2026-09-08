@@ -140,7 +140,7 @@ lever (L-risk, L-fresh, L-cost).
 - R14. Counterparty identity is a registry keyed on VAT ID or Peppol ID,
   with a signing key. Unknown identity means email-only mode. (P3)
 
-**Harness**
+**Guardrails**
 - R15. Every step writes an audit row. Every LLM call writes a cost row.
   One trace per case from first message to final state. (L-cost, L-risk)
 - R16. Per-workflow caps: max LLM calls, max steps, max spend. Exceeding
