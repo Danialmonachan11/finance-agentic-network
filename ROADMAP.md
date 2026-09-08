@@ -12,28 +12,23 @@ Order inside "To do" is priority order.
 
 ## To do
 
-1. **Decide buyer-side vs seller-side (PRD open question 3).**
-   Why: it picks the first customer, the first metric, and who the
-   counterparty is in every diagram. Recommendation: buyer side, mid-market.
-2. **Decide ERP strategy for v1 (PRD open question 2).**
-   Why: integration is the biggest cost and not the product. Recommendation:
-   Postgres is the system of record for v1, one read-adapter interface so a
-   real ERP can slot in later.
-3. **Build the status-inquiry path, shadow mode.** (R1..R5)
+1. **Build the status-inquiry path, shadow mode.** (R1..R5)
    Real intent classifier (four intents), resolver on counterparty + amount +
    reference, drafts only. Why: read-only, no money moves, and it forces the
    two pieces every later feature needs.
-4. **Pair setup flow.** Invite and accept between two companies, contract
+2. **Pair setup flow.** Invite and accept between two companies, contract
    and policy agreed on the pair, approvers named per side, a company home
    screen listing its pairs (R19..R21). Why: today pairs are seeded as
    already active; the demo needs the real flow.
-5. **Remaining guardrail gaps.** Per-workflow caps (R16), per-agent tool
+3. **Remaining guardrail gaps.** Per-workflow caps (R16), per-agent tool
    allowlist (R17). Why: turns "happens to be safe" into "cannot be unsafe".
-6. **Update BRAIN.md with the 2026-09-07 decisions.**
+4. **Update BRAIN.md with the 2026-09-07 decisions.**
    Why: it is the history doc and it still ends before the restart.
 
 ## Done
 
+- 2026-09-08 Decided: buyer side first, mid-market; Postgres is the system
+  of record for v1 behind one read adapter. Logged in the PRD ledger.
 - 2026-09-08 Pair table and pair-scoped execution (R8, R19, R20 in part).
   `pair` row per company pair, approvers carry company and pair, execution
   refuses an approver from another company or a pair that is not active,

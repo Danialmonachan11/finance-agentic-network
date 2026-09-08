@@ -236,6 +236,8 @@ One line per box. Add to this, never edit history.
 | Design for two instances, demo as one instance hosting both sides | Two instances is the real product; one instance is what a demo can show this month |
 | Pairing is invite and accept, email-only until accepted | Never require both sides on day one |
 | Company home screen lists own pairs only | No bird's-eye view; nothing leaks across pairs |
+| Buyer side first, mid-market | 2026-09-08: status inquiries are a buyer-side cost with a number on it ($9 per invoice, ~2h a day); buyers hold the software budget; seller side means competing with HighRadius on day one |
+| Postgres is the system of record for v1, behind one read adapter | 2026-09-08: the ERP integration is the tax, not the product; a single read interface lets NetSuite or Dynamics slot in later |
 
 ## 12. Open questions
 
@@ -243,10 +245,10 @@ One line per box. Add to this, never edit history.
    Decides R12 and R14. Smaller now: keys are exchanged at pairing, so the
    registry only has to answer "is this the B I paired with", not "who is
    this stranger".
-2. ERP boundary. Which ERP first? NetSuite and Dynamics BC are the
-   mid-market defaults. Read-only adapter is the integration tax.
-3. Who pays first, buyer or seller? Status inquiry is a buyer-side cost,
-   disputes are a seller-side cost. Pick one to sell to.
+2. ~~ERP boundary.~~ Decided 2026-09-08: Postgres for v1 behind one read
+   adapter. Which real ERP comes first is still open, but it no longer
+   blocks anything.
+3. ~~Who pays first.~~ Decided 2026-09-08: buyer side, mid-market.
 4. Wire protocol between two instances. Signed JSON over HTTPS is the
    obvious answer; the open part is the message schema and replay
    protection. Decides R12, R13, R19.
