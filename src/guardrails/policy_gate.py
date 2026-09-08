@@ -25,11 +25,13 @@ class PolicyViolation(Exception):
     pass
 
 
-def revalidate_eligibility(invoice_id: str) -> EligibilityResult:
-    """Re-derive eligibility from Postgres right now, ignoring whatever a
-    prior workflow run (or an agent's claim) said. This is what makes
-    execution safe even if the proposal is hours old."""
-    return evaluate_invoice_discount(invoice_id)
+def revalidate_eligibility(invoice_id: str, claimed_rate: float) -> EligibilityResult:
+    """Re-derive eligibility from Postgres right now for the rate on the
+    proposal being executed, ignoring whatever a prior workflow run (or an
+    agent's claim) said. claimed_rate is required: without it the lookup
+    falls back to the newest proposal on the invoice, which may not be the
+    one the approver reviewed."""
+    return evaluate_invoice_discount(invoice_id, claimed_rate=claimed_rate)
 
 
 def authorize_approval(approval_level: str, approver_role: str) -> None:

@@ -45,6 +45,11 @@ def check_eligibility(
     """The step-by-step grounded check from §3.4: contract active, within
     rate ceiling, within remaining budget, then map to an approval level.
     """
+    if not (0.0 < claimed_rate <= 1.0):
+        # A negative or zero rate would pass every check below as "auto" and
+        # book a negative discount; >100% is an extraction error, not a claim.
+        return EligibilityResult(False, 0.0, "rejected", f"claimed rate {claimed_rate} is outside (0, 1]")
+
     if contract.status != "active":
         return EligibilityResult(False, 0.0, "rejected", f"contract status is '{contract.status}', not active")
 

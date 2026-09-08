@@ -54,7 +54,7 @@ def execute_discount(proposal_id: str, approver_name: str, approver_role: str) -
     # Re-derive from Postgres now — never trust the proposal row's own
     # approval_level/status as sufficient, even though it was set correctly
     # at propose time. See policy_gate module docstring.
-    eligibility = revalidate_eligibility(invoice_id)
+    eligibility = revalidate_eligibility(invoice_id, float(claimed_rate))
     if not eligibility.eligible:
         log_audit(workflow_id, step="execute_discount", agent="execution_tool",
                    decision="blocked", reason=f"revalidation failed: {eligibility.reason}")

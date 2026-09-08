@@ -110,7 +110,7 @@ def evaluate_invoice_discount(invoice_id: str, claimed_rate: float | None = None
 
     resolved = get_contract_and_policy(invoice_id)
     if resolved is None:
-        raise ValueError(f"invoice {invoice_id} has no linked contract/policy")
+        return EligibilityResult(False, 0.0, "rejected", "invoice has no linked contract or discount policy")
     contract, policy = resolved
 
     period_used = get_period_used(str(contract_id))

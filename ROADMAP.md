@@ -19,26 +19,27 @@ Order inside "To do" is priority order.
    Why: integration is the biggest cost and not the product. Recommendation:
    Postgres is the system of record for v1, one read-adapter interface so a
    real ERP can slot in later.
-3. **Fix the four money-path bugs, with offline tests.** (R6..R9)
-   Revalidation reads the wrong proposal; no floor on the extracted rate;
-   `escalate` rejects sibling proposals; contract-less invoices crash the
-   graph. Why: they are in code the PRD keeps, and they are the first thing a
-   reviewer stops on. Tests must run with no Postgres and no API key.
-4. **Draw the bank-detail change flow.** (P3)
+3. **Draw the bank-detail change flow.** (P3)
    Why: the only pain where the network is categorically safer, not just
    faster, and it has no diagram yet.
-5. **Build the status-inquiry path, shadow mode.** (R1..R5)
+4. **Build the status-inquiry path, shadow mode.** (R1..R5)
    Real intent classifier (four intents), resolver on counterparty + amount +
    reference, drafts only. Why: read-only, no money moves, and it forces the
    two pieces every later feature needs.
-6. **Harness gaps.** Company-scoped approvers (R8), per-workflow caps (R16),
+5. **Harness gaps.** Company-scoped approvers (R8), per-workflow caps (R16),
    tool allowlist (R17). Why: turns "happens to be safe" into "cannot be
    unsafe".
-7. **Update BRAIN.md with the 2026-09-07 decisions.**
+6. **Update BRAIN.md with the 2026-09-07 decisions.**
    Why: it is the history doc and it still ends before the restart.
 
 ## Done
 
+- 2026-09-08 Four money-path bugs fixed (R6..R9): revalidation checks the
+  executed proposal's own rate; rates outside (0, 1] rejected; `escalate`
+  only rejects its own workflow's proposal; contract-less invoice is a
+  rejection, not a crash. `tests/test_money_path.py` runs with no Postgres
+  and no API key: `python -m unittest tests.test_money_path`. Why: money
+  code the PRD keeps, and the first thing a reviewer stops on.
 - 2026-09-07 Market research: `docs/market/ap-ar-primer.md`,
   `docs/market/pain-points-network.md`. Why: we did not know the process or
   the vendors before designing anything.

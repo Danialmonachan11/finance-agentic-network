@@ -375,8 +375,8 @@ def escalate(state: WorkflowState) -> dict:
         with get_conn() as conn, conn.cursor() as cur:
             cur.execute(
                 "UPDATE discount_proposal SET status = 'rejected' "
-                "WHERE invoice_id = %s AND status = 'proposed'",
-                (state["invoice_id"],),
+                "WHERE invoice_id = %s AND workflow_id = %s AND status = 'proposed'",
+                (state["invoice_id"], state["workflow_id"]),
             )
 
     log_audit(

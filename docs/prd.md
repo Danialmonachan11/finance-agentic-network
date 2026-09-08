@@ -215,9 +215,9 @@ One line per box. Add to this, never edit history.
 | R2 resolve | Missing: regex on invoice number only |
 | R3 human queue for unresolved | Missing: returns None |
 | R4, R5 status inquiry | Missing |
-| R6, R7 claims | Present, with the bugs listed in the 2026-09-07 review |
+| R6, R7 claims | Present; 2026-09-07 review bugs fixed 2026-09-08, covered by `tests/test_money_path.py` |
 | R8 approver scoping | Missing: approvers are global |
-| R9 idempotent execution | Present, revalidation reads the wrong row |
+| R9 idempotent execution | Present; revalidation now checks the executed proposal's own rate |
 | R10 to R12 bank change | Missing |
 | R13, R14 network | Missing |
 | R15 audit and cost | Present |
