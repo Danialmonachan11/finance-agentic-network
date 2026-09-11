@@ -67,6 +67,23 @@ The model's reading of a claimed discount rate is recorded but never trusted. A 
 
 Low risk executes, high risk declines, the middle band waits for an approver. Silence past the SLA expires the claim. A refused execution re-queues instead of dropping.
 
+## The approver's screen
+
+The pipeline settles what it can. The approval queue holds only the requests it judged uncertain, sorted riskiest first, with the reason it could not settle each one.
+
+<p align="center"><img src="docs/img/ui-queue.png" width="900" alt="Approval queue: two pending discount requests, the selected one showing invoice, discount asked, value, risk, and why the pipeline could not settle it"></p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/img/ui-executed.png" alt="Executed: decision history with asked vs approved rate, sign-off level and who decided"><br><sub><b>Executed.</b> Asked rate and approved rate are both kept, with the sign-off tier and who decided.</sub></td>
+    <td width="50%"><img src="docs/img/ui-agents.png" alt="Agent performance and cost: share auto-decided without a human, real model spend, reviewer time avoided"><br><sub><b>Agent performance and cost.</b> Share decided without a person, real provider-reported spend, reviewer time avoided, cost per decision.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/img/ui-pairs.png" alt="Pairs: one relationship per counterparty with its own contract, policy, approvers and agent switches"><br><sub><b>Pairs.</b> One relationship per counterparty: contract, max rate, auto-approve ceiling, approvers, and the switch that lets the agent send status replies unreviewed.</sub></td>
+    <td width="50%"><img src="docs/img/ui-audit.png" alt="Raw audit log: one row per pipeline step with agent, outcome, reason and timestamp"><br><sub><b>Raw audit log.</b> One row per pipeline step, unedited: agent, outcome, reason, timestamp, plus network-wide model calls and spend.</sub></td>
+  </tr>
+</table>
+
 ## What the LLM does, and what it never does
 
 | The model | Code |

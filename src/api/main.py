@@ -218,7 +218,10 @@ def landing(request: Request):
 
 @app.get("/companies")
 def companies(request: Request):
-    return templates.TemplateResponse(request, "companies.html", {"companies": list_companies()})
+    me = _my_company(request)
+    if me is None:
+        return RedirectResponse(url="/login?next=/companies", status_code=303)
+    return templates.TemplateResponse(request, "companies.html", {"companies": list_companies(me)})
 
 
 def _cached_sender_email_or_placeholder() -> str:
